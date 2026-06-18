@@ -5,7 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 
 import { apolloClient } from '@/core/apolloClient';
 import { queryClient } from '@/core/queryClient';
-import { Home } from '@/routes/Home';
+import { Home } from '@/features/health';
 
 // Root composition: wires cross-cutting providers + routing.
 export function App(): JSX.Element {

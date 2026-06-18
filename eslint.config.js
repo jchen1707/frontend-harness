@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import boundaries from 'eslint-plugin-boundaries';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
@@ -52,6 +53,137 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
 
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
+  },
+
+  // Fractal dependency rule (eslint-plugin-boundaries). The single architectural
+  // rule, machine-enforced: within a feature UI → services → repositories → core;
+  // across features only via the public surface (index.ts); core/env depend on
+  // nothing above. See docs/architecture.md §1.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { boundaries },
+    settings: {
+      // Resolve TS extensions + the `@/*` alias so boundaries can classify imports.
+      'import/resolver': {
+        typescript: { project: './tsconfig.json' },
+      },
+      'boundaries/include': ['src/**/*'],
+      'boundaries/elements': [
+        // Order matters: most specific first. File-mode = exact file; folder-mode
+        // (default) = the folder + everything inside it.
+        {
+          type: 'feature-index',
+          mode: 'file',
+          pattern: 'src/features/*/index.ts',
+          capture: ['feature'],
+        },
+        { type: 'feature-ui', pattern: 'src/features/*/ui', capture: ['feature'] },
+        { type: 'feature-service', pattern: 'src/features/*/services', capture: ['feature'] },
+        { type: 'feature-repo', pattern: 'src/features/*/repositories', capture: ['feature'] },
+        { type: 'env', mode: 'file', pattern: 'src/env.ts' },
+        { type: 'core', pattern: 'src/core' },
+        { type: 'shared-ui', pattern: 'src/components' },
+        { type: 'app', mode: 'file', pattern: 'src/{App,main}.tsx' },
+      ],
+    },
+    rules: {
+      'boundaries/dependencies': [
+        'error',
+        {
+          default: 'disallow',
+          rules: [
+            // App shell composes features via their public surface + the bottom layer
+            // (and its own modules — main.tsx mounts App.tsx).
+            {
+              from: [{ type: 'app' }],
+              allow: [
+                { to: { type: 'app' } },
+                { to: { type: 'core' } },
+                { to: { type: 'env' } },
+                { to: { type: 'shared-ui' } },
+                { to: { type: 'feature-index' } },
+              ],
+            },
+            // Design-system primitives lean only on the bottom layer and each other.
+            {
+              from: [{ type: 'shared-ui' }],
+              allow: [
+                { to: { type: 'core' } },
+                { to: { type: 'env' } },
+                { to: { type: 'shared-ui' } },
+              ],
+            },
+            // core / env sit at the bottom — they depend on nothing above.
+            {
+              from: [{ type: 'core' }],
+              allow: [{ to: { type: 'core' } }, { to: { type: 'env' } }],
+            },
+            { from: [{ type: 'env' }], allow: [{ to: { type: 'env' } }] },
+            // Within a feature, the one-directional rule holds.
+            {
+              from: [{ type: 'feature-ui' }],
+              allow: [
+                { to: { type: 'core' } },
+                { to: { type: 'env' } },
+                { to: { type: 'shared-ui' } },
+                {
+                  to: {
+                    type: 'feature-service',
+                    captured: { feature: '{{from.captured.feature}}' },
+                  },
+                },
+                // Other features only through their published surface.
+                {
+                  to: {
+                    type: 'feature-index',
+                    captured: { feature: '!{{from.captured.feature}}' },
+                  },
+                },
+              ],
+            },
+            {
+              from: [{ type: 'feature-service' }],
+              allow: [
+                { to: { type: 'core' } },
+                { to: { type: 'env' } },
+                {
+                  to: { type: 'feature-repo', captured: { feature: '{{from.captured.feature}}' } },
+                },
+                {
+                  to: {
+                    type: 'feature-index',
+                    captured: { feature: '!{{from.captured.feature}}' },
+                  },
+                },
+              ],
+            },
+            // Repositories touch only the bottom layer (no React, no services).
+            {
+              from: [{ type: 'feature-repo' }],
+              allow: [{ to: { type: 'core' } }, { to: { type: 'env' } }],
+            },
+            // The public surface re-exports its own feature's internals.
+            {
+              from: [{ type: 'feature-index' }],
+              allow: [
+                { to: { type: 'core' } },
+                { to: { type: 'env' } },
+                { to: { type: 'feature-ui', captured: { feature: '{{from.captured.feature}}' } } },
+                {
+                  to: {
+                    type: 'feature-service',
+                    captured: { feature: '{{from.captured.feature}}' },
+                  },
+                },
+                {
+                  to: { type: 'feature-repo', captured: { feature: '{{from.captured.feature}}' } },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     },
   },
 

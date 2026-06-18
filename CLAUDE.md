@@ -42,7 +42,7 @@ This file is loaded every session. It is the source of truth. Detailed standards
 
 1. **Understand / research** — read the relevant code; `/arch` for standards.
 2. **Plan** — for non-trivial work use `/plan`, get explicit user sign-off, then **STOP** before implementing.
-3. **Implement** — code in the right layer (UI → service → repository), explicit types, Tailwind for styling.
+3. **Implement** — code in the right feature slice and the right layer within it (UI → service → repository → core), explicit types, Tailwind for styling. New cross-feature reuse goes through a feature's `index.ts` or gets promoted to `core` deliberately.
 4. **Sync** — `pnpm install` if dependencies changed.
 5. **Verify** — `/lint` → `/test` → `/review`.
 6. **Commit / PR** — feature branches are fine; committing to `main` requires an explicit user request.
@@ -67,7 +67,7 @@ This file is loaded every session. It is the source of truth. Detailed standards
 
 ## Two-terminal plan → implement workflow (cross-model handoff)
 
-- **Terminal 1 (`/plan`, planning model):** research → pick base branch → design (UI → Service → Repository, choose design pattern) → write `.claude/plans/plan.md` + `.claude/plans/test-plan.md` → get explicit user sign-off → **STOP. Do NOT implement.**
+- **Terminal 1 (`/plan`, planning model):** research → pick base branch → locate or define the feature slice → design within it (UI → Service → Repository → core, choose design pattern) → write `.claude/plans/plan.md` + `.claude/plans/test-plan.md` → get explicit user sign-off → **STOP. Do NOT implement.**
 - **Terminal 2 (`/implement`, implementation model):** read both plans → build task list → implement per layer → `/lint` → `/test` → `/review` → update plans append-only (record divergences under `## Deviations`) → auto-PR via `gh` (never directly to `main`).
 
 Material deviations (changed approach, public signature, layer boundary, scope, or an open question) → STOP and re-confirm with the user. Immaterial ones (helper names, file splits, fixing pseudocode bugs) → proceed and log under Deviations.

@@ -1,8 +1,9 @@
-// Repository layer: data access behind an interface (mirror of the
-// Embedder/VectorStore protocol+impls pattern in python-harness).
-// Depend on the interface; inject the implementation at composition time.
+// Repository layer (feature-internal): data access behind an interface.
+// Within the feature the dependency rule still holds — repositories may
+// depend only on core/env, never on services or UI.
 import { request } from '@/core/http';
-import { type Health, healthSchema } from '@/repositories/schemas/health';
+
+import { type Health, healthSchema } from './schemas/health';
 
 export interface HealthRepository {
   getHealth(signal?: AbortSignal): Promise<Health>;

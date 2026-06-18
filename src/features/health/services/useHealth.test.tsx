@@ -3,8 +3,8 @@ import { renderHook, waitFor } from '@testing-library/react';
 import type { JSX, ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { FakeHealthRepository, HttpHealthRepository } from '@/repositories/health';
-import { useHealth } from '@/services/health';
+import { FakeHealthRepository, HttpHealthRepository } from '../repositories/health';
+import { useHealth } from './useHealth';
 
 function makeWrapper(): (props: { children: ReactNode }) => JSX.Element {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

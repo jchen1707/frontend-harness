@@ -2,7 +2,7 @@
 
 A **harness, not an application**: guardrails, workflow, and standards for frontend (React/TypeScript) development. It defines _how_ to build — layering, tooling gates, slash commands, and an agent workflow — not a specific product. It is the frontend sibling of `python-harness`.
 
-The repo ships a minimal, runnable skeleton (a health/smoke route + tests) so `/run` and `/test` work out of the box. Build real features on top of the layers documented in [`docs/architecture.md`](docs/architecture.md).
+The repo ships a minimal, runnable skeleton (a health/smoke route + tests) so `/run` and `/test` work out of the box. Build real features as vertical slices under `src/features/`, following the dependency rule documented in [`docs/architecture.md`](docs/architecture.md).
 
 ## Setup
 
@@ -34,7 +34,7 @@ Slash commands (`/plan`, `/implement`, `/lint`, `/test`, `/review`, `/arch`, `/r
 
 ## Conventions
 
-- **Layered:** UI/routes → services (hooks) → repositories (data access behind interfaces) → core/env. No reverse/lateral dependencies.
+- **Feature-sliced, fractal layering:** each feature owns its slice under `src/features/<name>/` (UI → services → repositories → core); features depend on each other only through a published `index.ts`; `core`/`components` sit at the bottom. The rule is machine-enforced by `eslint-plugin-boundaries`. No reverse/lateral/cross-feature-internal dependencies.
 - **Validated boundaries:** every external response is parsed through a Zod schema before it enters the app.
 - **Strict types:** `any` is an ESLint error; exported functions carry explicit types.
 - **The approved stack is fixed in `package.json`** — adding a different framework requires updating [CLAUDE.md](CLAUDE.md) + [docs/architecture.md](docs/architecture.md) first.

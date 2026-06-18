@@ -6,10 +6,11 @@ Detailed standards for this harness. Load on demand via `/arch`. CLAUDE.md is th
 
 ## §0 Choosing architecture & design patterns per feature
 
-Pick the structural style deliberately during `/plan`, and document the choice in the plan:
+**The unit of organization is the feature, not the layer.** Each feature owns its slice top-to-bottom under `src/features/<name>/` — its UI, its services (hooks), its repositories + schemas, and any feature-local types. The one-directional dependency rule (§1) holds _within_ the slice. The payoff: changes stay vertical (a typical edit touches one folder from route down to data access, not four global layer directories), and deleting a feature is deleting a folder, not archaeology across the tree.
 
-- **Default: layered SPA** — UI/routes → services (hooks) → repositories. Good for most screens.
-- **Feature-sliced / modular** — when a feature is large and self-contained, group its UI + service + repository under `src/features/<name>/` instead of spreading across global layers. The layer _rules_ still apply within the slice.
+Pick the **structural style of the feature** deliberately during `/plan`, and document the choice:
+
+- **Default: layered slice** — inside the feature, UI/routes → services (hooks) → repositories → core. Good for most features.
 - **Flux / unidirectional** — for complex shared client state, a store (reducer/`useReducer` or a state library) with one-way data flow.
 - **Event-driven** — for realtime (WebSocket/SSE) features, an emitter/subscription boundary in the repository layer feeding services.
 
@@ -28,31 +29,41 @@ The agent must state the chosen pattern and _why_ during `/plan`.
 
 ---
 
-## §1 Layering — UI → Service → Repository
+## §1 The dependency rule — stated once, applies fractally
 
 ```
-routes/ + components/  ──▶  services/ (hooks)  ──▶  repositories/  ──▶  core/ + env
+src/
+  features/<name>/
+    ui/            routes + components (presentation + transport)
+    services/      hooks: business logic, TanStack Query / Apollo, orchestration
+    repositories/  data access behind interfaces; schemas/ holds Zod boundary validation
+    index.ts       the feature's PUBLIC SURFACE — the only thing other features may import
+  core/            cross-cutting primitives: logger, errors, http, queryClient, apolloClient
+  components/      design-system / shared UI primitives
+  env.ts           the single place env is read + validated
+  App.tsx main.tsx composition root / app shell (wires providers + routes feature surfaces)
 ```
 
-- **UI / controller layer** (`src/routes/`, `src/components/`): presentation + transport (user events). A route calls **one** service hook and shapes the view. No data access or fetch here.
-- **Service layer** (`src/services/`): business logic + orchestration. Data hooks (TanStack Query / Apollo) compose repositories. This is where rules, derived state, and coordination live.
-- **Repository layer** (`src/repositories/`): data access behind **interfaces**. HTTP/GraphQL clients, with response validation. The only layer that knows transport details.
-- **core/** (`src/core/`): cross-cutting — `logger`, `errors`, `http`, `queryClient`, `apolloClient`.
-- **env** (`src/env.ts`): the single place env is read/validated.
+The rule has two clauses:
 
-**No reverse or lateral dependencies.** UI → services → repositories → core/env, one direction. Components don't import repositories; repositories don't import React.
+1. **Within a feature** — `ui → services → repositories → core/env`, one direction. A UI component calls **one** service hook and shapes the view (no fetch/data access). Services hold business logic, derived state, and coordination, composing repositories. Repositories own transport + response validation behind **interfaces**. No reverse edges: a repository never imports a service or React; UI never imports a repository.
+2. **Across features** — a feature may depend on another feature **only through its published surface** (`index.ts`), never its services, repositories, or internal components. Genuinely shared things live in `core/` (logic) and `components/` (design-system primitives): every feature may depend on them, and they depend on nothing above. **`core` is the only place horizontal sharing is legal, and it sits at the bottom of the graph.**
+
+**This is machine-enforced** by `eslint-plugin-boundaries` (config in `eslint.config.js`). Illegal reverse, lateral, or cross-feature-internal imports fail `pnpm lint` — the rule an agent or new dev relies on is a guardrail, not a convention. The same statement applies at every scale, which is why a feature is locatable by name and an agent can trust that everything relevant is colocated.
+
+**Keeping `core`/`components` honest (the one judgment call).** They are for genuinely cross-cutting primitives only — not a junk drawer. When two features keep reaching for the same thing, promote it to `core` **deliberately** rather than by accident, and don't let shared code swell into a second app. "What counts as a feature" is decided during `/plan`; the failure mode to avoid is a junk-drawer feature.
 
 ---
 
 ## §2 Interfaces over implementations
 
-Repositories define a TS `interface`; provide a production implementation (`Http*` / Apollo-backed) and a test implementation (`Fake*`), injected at composition time. Worked example: `src/repositories/health.ts` (`HealthRepository` + `HttpHealthRepository` + `FakeHealthRepository`). Services accept the interface with a production default (`useHealth(repository = defaultRepository)`), so tests inject a fake with zero network. This mirrors the Embedder/VectorStore pattern in `python-harness`.
+Repositories define a TS `interface`; provide a production implementation (`Http*` / Apollo-backed) and a test implementation (`Fake*`), injected at composition time. Worked example: `src/features/health/repositories/health.ts` (`HealthRepository` + `HttpHealthRepository` + `FakeHealthRepository`). Services accept the interface with a production default (`useHealth({ repository })`), so tests inject a fake with zero network. This mirrors the Embedder/VectorStore pattern in `python-harness`.
 
 ---
 
 ## §3 Data fetching — REST & GraphQL
 
-Validate **every** external response through a Zod schema at the repository boundary before it enters the app (`src/repositories/schemas/`).
+Validate **every** external response through a Zod schema at the repository boundary before it enters the app (`src/features/<name>/repositories/schemas/`).
 
 **REST (TanStack Query + `core/http.ts`):**
 
@@ -157,7 +168,7 @@ Baseline: route-level code-splitting (`React.lazy` + `Suspense`), measured memoi
 
 ## §13 Testing
 
-- **Offline unit/component tests (default).** Vitest + Testing Library + jsdom, with **MSW** intercepting all network (`onUnhandledRequest: 'error'` — unmocked requests fail). Inject `Fake*` repositories for pure logic; use MSW to exercise the HTTP/validation path. No real network, ever. Worked example: `src/services/health.test.tsx`. Colocate as `*.test.ts(x)` next to the unit.
+- **Offline unit/component tests (default).** Vitest + Testing Library + jsdom, with **MSW** intercepting all network (`onUnhandledRequest: 'error'` — unmocked requests fail). Inject `Fake*` repositories for pure logic; use MSW to exercise the HTTP/validation path. No real network, ever. Worked example: `src/features/health/services/useHealth.test.tsx`. Colocate as `*.test.ts(x)` next to the unit.
 - **E2E (Playwright).** Scripted specs in `e2e/` run against the real dev server (`playwright.config.ts` boots `pnpm dev`) — the frontend analog of testcontainers integration tests. Run with `pnpm test:e2e`. Worked example: `e2e/smoke.spec.ts`.
 - **Agent-driven Playwright MCP.** For interactive verification during `/run`/`/review`. Prefer the accessibility-tree snapshot (text); **screenshots are image inputs and require explicit user consent** (see CLAUDE.md Guardrails).
 - Don't edit a test to make it pass — diagnose the root cause.

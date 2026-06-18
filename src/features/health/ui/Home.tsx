@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 
-import { useHealth } from '@/services/health';
+import { useHealth } from '../services/useHealth';
 
 // Route component = controller/transport layer: calls a service, shapes the view.
 export function Home(): JSX.Element {
