@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>frontend-development-harness</title>
+    <meta
+      name="description"
+      content="A harness, not an application: guardrails, workflow, and standards for frontend development."
+    />
+  </head>
+  <body>
+    <!--
+      Static fallback so the page paints content immediately, before the JS
+      bundle executes. React's createRoot replaces this on mount. Without it,
+      a fully client-rendered SPA can fail Lighthouse with NO_FCP (no First
+      Contentful Paint) and flashes blank on slow loads.
+    -->
+    <div id="root">
+      <main
+        style="margin: 0 auto; max-width: 42rem; padding: 2rem; font-family: system-ui, sans-serif"
+      >
+        <h1 style="font-size: 1.5rem; font-weight: 700">frontend-development-harness</h1>
+        <p style="color: #475569">A harness, not an application.</p>
+      </main>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

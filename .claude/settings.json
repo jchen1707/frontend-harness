@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm preview:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm lhci)",
+      "Bash(pnpm exec:*)",
+      "Bash(npx playwright:*)",
+      "Bash(npx lhci:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": ["Bash(git reset --hard:*)", "Bash(git push --force:*)", "Bash(git push -f:*)"]
+  },
+  "plansDirectory": ".claude/plans"
+}

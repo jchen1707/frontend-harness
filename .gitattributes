@@ -1,0 +1,14 @@
+# Normalize line endings to LF across platforms.
+* text=auto eol=lf
+
+# Generated lockfile: exclude from diffs and language stats.
+pnpm-lock.yaml linguist-generated=true -diff
+
+# Never normalize binaries.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
