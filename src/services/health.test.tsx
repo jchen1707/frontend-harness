@@ -16,7 +16,9 @@ function makeWrapper(): (props: { children: ReactNode }) => JSX.Element {
 describe('useHealth', () => {
   it('returns health from an injected fake repository (fully offline)', async () => {
     const repository = new FakeHealthRepository({ status: 'ok', version: 'unit' });
-    const { result } = renderHook(() => useHealth(repository), { wrapper: makeWrapper() });
+    const { result } = renderHook(() => useHealth({ repository, enabled: true }), {
+      wrapper: makeWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);
@@ -25,9 +27,10 @@ describe('useHealth', () => {
   });
 
   it('parses a Zod-validated response through the HTTP layer (MSW)', async () => {
-    const { result } = renderHook(() => useHealth(new HttpHealthRepository()), {
-      wrapper: makeWrapper(),
-    });
+    const { result } = renderHook(
+      () => useHealth({ repository: new HttpHealthRepository(), enabled: true }),
+      { wrapper: makeWrapper() },
+    );
 
     await waitFor(() => {
       expect(result.current.isSuccess).toBe(true);

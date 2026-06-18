@@ -24,8 +24,11 @@ jobs:
       - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
+      # E2E is a single smoke spec — run it once (Linux) rather than per-OS.
       - run: pnpm exec playwright install --with-deps chromium
+        if: matrix.os == 'ubuntu-latest'
       - run: pnpm test:e2e
+        if: matrix.os == 'ubuntu-latest'
 
   lighthouse:
     runs-on: ubuntu-latest

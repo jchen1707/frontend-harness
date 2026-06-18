@@ -18,15 +18,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const timeout = setTimeout(() => {
     controller.abort();
   }, timeoutMs);
-  if (signal) {
-    signal.addEventListener(
-      'abort',
-      () => {
-        controller.abort();
-      },
-      { once: true },
-    );
-  }
+  const onAbort = (): void => {
+    controller.abort();
+  };
+  signal?.addEventListener('abort', onAbort, { once: true });
 
   try {
     const init: RequestInit = {
@@ -44,5 +39,6 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     return (await response.json()) as T;
   } finally {
     clearTimeout(timeout);
+    signal?.removeEventListener('abort', onAbort);
   }
 }

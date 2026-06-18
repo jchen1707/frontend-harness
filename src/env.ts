@@ -7,6 +7,12 @@ const envSchema = z.object({
   VITE_API_BASE_URL: z.string().url().default('http://localhost:8000'),
   VITE_GRAPHQL_URL: z.string().url().default('http://localhost:8000/graphql'),
   VITE_LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  // Off by default so a fresh clone with no backend stays quiet (no failing
+  // fetch on load). Set to 'true' once a real backend is wired up.
+  VITE_HEALTHCHECK_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;
