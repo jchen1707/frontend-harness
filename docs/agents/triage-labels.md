@@ -32,6 +32,13 @@ The tracker is **Linear** (see `issue-tracker.md`). State labels are **labels**,
 states — applying one does not move the issue across the board. Set the Linear workflow state
 explicitly when the role implies one.
 
+**These labels are workspace-scoped, and this repo is bound to one workspace by its
+`LINEAR_API_KEY`.** They do not exist anywhere until somebody creates them there. Before
+relying on this table, list the labels actually present and create whatever is missing — the
+MCP server can create a label but cannot rename or delete one, so a typo is a trip to the
+Linear UI. `python-harness` is on a different workspace with its own copy of these seven;
+the two are unrelated and neither inherits the other's.
+
 ### One category per issue
 
 The skill requires exactly one category role per issue. If the workspace has a third label
