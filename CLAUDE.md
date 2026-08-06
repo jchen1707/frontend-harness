@@ -251,8 +251,10 @@ including `python-harness`, whose triage labels live in a different workspace. A
 personal API key belongs to the workspace it was created in, so declaring the server here
 binds this repo to one workspace and nothing else can drift it.
 
-Branch as `<type>/<TEAM-NUM>-<slug>` (e.g. `feat/ENG-412-search-filters`) so `/code-review`
-can resolve the originating ticket mechanically.
+Workspace **Development**, team **Frontend**, key **`FRO`** — so issues read `FRO-123`. Branch
+as `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`) so `/code-review` can resolve
+the originating ticket mechanically. `BAC` (Backend) is the sibling team in the same
+workspace; it is not this repo's.
 
 ## Guardrails
 

@@ -24,7 +24,7 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
      `git pull --ff-only` when the base tracks a remote). If the pull fails, STOP and tell the
      user — ask whether to proceed from the local state or fix it first; do not force or reset.
    - Create and switch to a new feature branch off it. Name it `<type>/<TEAM-NUM>-<slug>` when
-     a Linear ticket exists (e.g. `feat/ENG-412-search-filters`) so `/code-review` can resolve
+     a Linear ticket exists (e.g. `feat/FRO-412-search-filters`) so `/code-review` can resolve
      the ticket mechanically; kebab-case from the feature argument otherwise. Confirm the name
      with the user.
    - `plan.md` / `test-plan.md` are gitignored, so switching branches does not disturb them.

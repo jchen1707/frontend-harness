@@ -40,6 +40,21 @@ the workspace this repo should use. Set it in your **user** settings (`~/.claude
 every clone would inherit. Moving this repo to a different workspace means issuing a key in
 that workspace and restarting; no repo file changes.
 
+## Workspace and team
+
+|                    | Value                                                      |
+| ------------------ | ---------------------------------------------------------- |
+| Workspace          | **Development** (`development-jchen`)                      |
+| Team for this repo | **Frontend**, key **`FRO`** — issues read `FRO-123`        |
+| Sibling team       | **Backend**, key `BAC` — not this repo's; do not file here |
+
+The team key is the issue-id prefix, and `/code-review` resolves a ticket from it, so a
+branch named with the wrong prefix silently loses its spec axis.
+
+Note the key is **not** returned by the MCP `get_team` tool — it exposes id, name, icon and
+timestamps only. Read it from Linear's GraphQL API (`{ teams { nodes { key name } } }`,
+authenticating with the same personal key) or from any issue id in the UI.
+
 ## Discovering the tools
 
 **List the tools before first use rather than assuming names.** The surface changes between
@@ -53,14 +68,14 @@ table below to what is actually offered.
 | Operation               | What to call                                                                                              |
 | ----------------------- | --------------------------------------------------------------------------------------------------------- |
 | **Create an issue**     | the create-issue tool — needs `team`; set `title`, `description` (markdown), optional `labels`, `project` |
-| **Read an issue**       | the get-issue tool, with the identifier (`ENG-123`)                                                       |
+| **Read an issue**       | the get-issue tool, with the identifier (`FRO-123`)                                                       |
 | **List issues**         | the list-issues tool — filter by `team`, `state`, `assignee`, `label`                                     |
 | **Comment**             | the create-comment tool, with the issue id and markdown `body`                                            |
 | **Apply/remove labels** | the update-issue tool, setting the `labels` array                                                         |
 | **Change state**        | the update-issue tool, with the target workflow state                                                     |
 | **Close**               | move to the team's Done/Cancelled state — Linear has no separate close verb                               |
 
-Issue identifiers are `TEAM-NUMBER` (e.g. `ENG-4521`), not bare integers. A reference like
+Issue identifiers are `TEAM-NUMBER` (e.g. `FRO-4521`), not bare integers. A reference like
 `#42` in conversation is **not** a Linear id — ask which team it belongs to rather than
 guessing. `#42` in this repo's conversation usually means a GitHub PR.
 
@@ -73,8 +88,8 @@ issue across the board; set the state explicitly when the role implies one.
 
 ## When a skill says "publish to the issue tracker"
 
-Create a Linear issue in the default team. Put the spec in the issue `description` as
-markdown. If the skill produced a document longer than fits comfortably, put the summary and
+Create a Linear issue in the **Frontend** team (`FRO`). Put the spec in the issue
+`description` as markdown. If the skill produced a document longer than fits comfortably, put the summary and
 acceptance criteria in the description and link the full document.
 
 ## When a skill says "fetch the relevant ticket"
@@ -103,7 +118,7 @@ Used by `/wayfinder`. The **map** is one issue; **tickets** are its children.
   summary in `CLAUDE.md`, and the nested `CLAUDE.md` for whichever directory the diff touches.
   Those override the skill's generic smell baseline.
 - The **Spec** axis resolves the originating ticket from the Linear id in the branch name or
-  commit trailer. Name branches `<type>/<TEAM-NUM>-<slug>` (e.g. `feat/ENG-412-search-filters`)
+  commit trailer. Name branches `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`)
   so the link is mechanical. When there is no ticket, it falls back to `.claude/plans/plan.md`.
 - Definition of Done lives in `CLAUDE.md`; `/verify` runs those gates and prints evidence.
 - Nine axes instead of two: `.claude/workflows/full-review.js`, run with `/workflows`. That is

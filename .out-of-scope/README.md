@@ -37,10 +37,10 @@ architectural change that doesn't align with the project's focus.
 
 ## Prior requests
 
-- ENG-42 — "Add dark mode support"
-- ENG-87 — "Night theme for accessibility"
+- FRO-42 — "Add dark mode support"
+- FRO-87 — "Night theme for accessibility"
 ```
 
-Use Linear identifiers (`ENG-42`), not bare integers — see `docs/agents/issue-tracker.md`.
+Use Linear identifiers (`FRO-42`), not bare integers — see `docs/agents/issue-tracker.md`.
 
 Full spec: `skills/engineering/triage/OUT-OF-SCOPE.md` in the `mattpocock-skills` plugin.
