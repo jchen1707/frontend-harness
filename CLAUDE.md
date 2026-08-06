@@ -251,22 +251,50 @@ can resolve the originating ticket mechanically.
 ## Guardrails
 
 - **Explicit image-input consent (HARD RULE).** Before starting ANY task in the session that
-  would feed an image into the model — taking or attaching a screenshot (including via
-  Playwright MCP `browser_take_screenshot`), pasting a design mockup, reading a diagram or a
-  PDF page as an image — **STOP and explicitly ask the user for permission first, and do not
-  proceed until they confirm.** This applies even mid-task. Prefer the Playwright MCP
-  accessibility snapshot: it is text, it needs no consent, and it shows the roles and names
-  assistive technology exposes.
+  would feed an image into the model — taking or attaching a screenshot (including
+  `mcp__chrome-devtools__take_screenshot`), recording a screencast, pasting a design mockup,
+  reading a diagram or a PDF page as an image — **STOP and explicitly ask the user for
+  permission first, and do not proceed until they confirm.** This applies even mid-task.
+  Prefer `take_snapshot`: it is a text a11y-tree snapshot, it needs no consent, and it shows
+  the roles and names assistive technology exposes. The rule is written by **capability, not
+  by tool name** — a new image-producing tool is covered the day it appears, without an edit
+  here.
 - **Approved stack is fixed.** Introducing a different framework or library requires updating
   this file and `docs/architecture.md` first (§14, Dependency policy).
 - **Secrets never reach the browser.** Only `VITE_`-prefixed env vars are bundled — treat them
   as public. `ANTHROPIC_API_KEY` and `GH_TOKEN` are server and build-side only.
 
-## Playwright MCP
+## Browser work — two tools, two jobs
 
-The `@playwright/mcp` server in `.mcp.json` lets the agent drive a real browser — navigate,
-click, read the accessibility snapshot, assert — during `/run` and `/verify`. It is the
-interactive complement to the scripted `e2e/` specs, which are the regression net.
+Do not confuse them. They are not alternatives.
+
+|                    | Tool                                         | Job                                                                                            |
+| ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`)          | Agent-driven. Build, iterate on design, debug, profile. Costs tokens per run; asserts nothing. |
+| **Regression net** | `@playwright/test` → `e2e/`, `pnpm test:e2e` | Scripted specs. Runner, assertions, retries, CI. Costs nothing per run; fails the build.       |
+
+**Chrome DevTools MCP is not a test framework.** It has no runner, no assertions and no CI
+integration, so nothing it does can fail a build or catch a regression six months from now.
+Its value is inspection: `take_snapshot` (text a11y tree), console and network, and
+`performance_start_trace` / `performance_analyze_insight` for Core Web Vitals against real
+Chrome.
+
+**The pipeline is explore → promote.** Drive the browser to work out what the behaviour
+should be; the moment it is settled, write it into `e2e/` as a spec. An agent re-driving a
+browser is a re-inspection, not a regression test. A fast-loop session that changed user-
+visible behaviour and added no spec has left the behaviour unguarded — say so rather than
+calling it done.
+
+`e2e/` stays chromium-only and Playwright stays a devDependency; swapping the MCP server
+changed neither. If cross-browser coverage is ever needed, add a WebKit project to
+`playwright.config.ts` — real regression coverage — rather than a second MCP server.
+
+The server runs `--headless --isolated`, so it gets a throwaway profile and never touches a
+real browsing session. It also runs `--redact-network-headers` (so `Authorization` and
+cookies do not land in the transcript), `--no-usage-statistics` and `--no-performance-crux`
+(so neither usage data nor traced URLs leave the machine). Attaching to a live Chrome with
+`--browserUrl` or `--autoConnect` means acting as the logged-in user; that is a deliberate,
+per-task decision, never the committed default.
 
 ## Environment
 

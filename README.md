@@ -81,6 +81,27 @@ pnpm dev                                  # http://localhost:5173
 pnpm exec playwright install chromium     # once, before the first pnpm test:e2e
 ```
 
+### Browser work — two tools, two jobs
+
+They are not alternatives, and picking the wrong one is the common mistake:
+
+|                    | Tool                                | Job                                                                                                   |
+| ------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`) | Agent-driven: build, iterate on design, debug, profile. Needs Chrome installed; no setup beyond that. |
+| **Regression net** | `@playwright/test` → `e2e/`         | Scripted specs with assertions, retries and CI. `pnpm test:e2e`.                                      |
+
+Chrome DevTools MCP has **no runner, no assertions and no CI integration** — nothing it does
+can fail a build. It is for exploring and diagnosing, and it is fast at that: a text a11y
+snapshot (`take_snapshot`), console and network inspection, and real Core Web Vitals traces
+(`performance_start_trace`). Playwright is what still checks your work in six months.
+
+**The workflow is explore → promote.** Drive the browser to settle the behaviour, then write
+it into `e2e/` as a spec.
+
+The committed config runs `--headless --isolated`, so the agent gets a throwaway Chrome
+profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
+and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
+
 ### Symbol navigation (optional, once per machine)
 
 `.mcp.json` declares a `typescript-lsp` server so agents can resolve TypeScript **symbols**

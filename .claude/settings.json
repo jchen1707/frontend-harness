@@ -32,7 +32,7 @@
     "mattpocock-skills@mattpocock": true
   },
   "plansDirectory": ".claude/plans",
-  "enabledMcpjsonServers": ["playwright", "typescript-lsp"],
+  "enabledMcpjsonServers": ["chrome-devtools", "typescript-lsp"],
   "hooks": {
     "PreToolUse": [
       {
