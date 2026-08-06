@@ -98,8 +98,13 @@ When to prefer it over grep: `CLAUDE.md` → Symbol navigation.
 
 Set `CLAUDE_LEARNINGS_DIR` in your **user** settings — never in this repo's committed
 `.claude/settings.json`, or a clone inherits a path to your vault. With it set, the SessionEnd
-hook distils each session's hard-won lessons into a dated note and rebuilds the vault indexes
-that `/search-second-brain` reads.
+hook distils each session's hard-won lessons into a dated note.
+
+**This harness writes notes; it does not index them.** `python-harness` owns
+`_VAULT_INDEX.md` and `Project Learnings/_INDEX.md` and rebuilds both when a session ends
+there — one indexer, so there is no second copy to drift. The trade is that notes written
+here do not appear in either index until you next end a session in `python-harness`;
+`/search-second-brain` greps the vault as well as reading the indexes to cover the gap.
 
 ## The SDLC
 
@@ -159,12 +164,12 @@ Slash commands come from three places, and the session's skill listing shows all
 
 ## What runs without being asked
 
-| Hook                                 | Effect                                                                       |
-| ------------------------------------ | ---------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output          |
-| `format_edited.mjs` (PostToolUse)    | Prettier on each edited file; ESLint `--fix` on `.ts`/`.tsx`                 |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source     |
-| `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain; rebuilds the vault indexes |
+| Hook                                 | Effect                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output                               |
+| `format_edited.mjs` (PostToolUse)    | Prettier on each edited file; ESLint `--fix` on `.ts`/`.tsx`                                      |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                          |
+| `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain (notes only — `python-harness` owns the indexes) |
 
 The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it for a
 session.

@@ -29,6 +29,12 @@ Two generated indexes sit above the notes. Both are cheap; read them before anyt
   `tags: [project-learnings, session-retro]` and two sections — _Implementation learnings_
   and _Architecture & design learnings_.
 
+> **Expect both indexes to lag, and never treat them as complete.** This repo writes notes
+> but does not index them — `python-harness` owns both files and rebuilds them when a session
+> ends there. So every note written from a frontend session since the last `python-harness`
+> session is missing from the indexes, including notes you can plainly see in the folder.
+> The grep in step 2 is what covers that gap. It is not optional here.
+
 An `.base` file (`LLM.base`) is **not** an index you can read. It is a query that Obsidian
 evaluates in its own UI; reading it returns the query definition, never any notes. It is
 there for the human. The Markdown indexes above are the ones for you.
@@ -47,8 +53,8 @@ is what stops a search from quietly editing the thing it was searching.
    `Project Learnings/_INDEX.md` when the question is about a past session specifically; it
    adds the date and originating project.
 
-   Both are rebuilt whenever a session ends with the second brain configured, so they are
-   current to the last session. A note added in Obsidian since then will be missing — which
+   Both are rebuilt when a session ends in `python-harness`, so they are current to that
+   session, not to this one. A note added in Obsidian since then will be missing — which
    is why step 2 still greps rather than trusting the index alone.
 
    A blank "what it covers" means the note is an empty stub, not that it is unreadable. Do
@@ -63,6 +69,10 @@ is what stops a search from quietly editing the thing it was searching.
 
    Use this to catch what the summaries do not say. A summary names topics; the body holds
    the detail. Search both, but open bodies selectively.
+
+   **Never skip this step because step 1 returned hits.** In this repo the indexes are
+   written elsewhere and always lag, so an unindexed note is the normal case, not the edge
+   case. Skipping the grep turns "the vault has nothing on this" into a confident falsehood.
 
 3. **Read the hits in full.** These notes are short. Skimming a lesson is how you get the
    correction backwards.

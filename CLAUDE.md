@@ -61,12 +61,12 @@ feature branch and opening a PR needs no permission; committing to `main` does.
 Hooks run in the harness, so they hold regardless of what any instruction here says. See
 `.claude/hooks/`:
 
-| Hook                                 | Effect                                                                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`                                                                                      |
-| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                         |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                   |
-| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain, and rebuilds the vault indexes via `vault_index.mjs`. Off unless `CLAUDE_LEARNINGS_DIR` is set |
+| Hook                                 | Effect                                                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`                                                                                       |
+| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                          |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                    |
+| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `CLAUDE_LEARNINGS_DIR` is set |
 
 The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it. The
 harness overrides a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck
@@ -300,26 +300,34 @@ A layer above memory, in the user's own notes rather than the agent's:
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
   fixes into a dated note under `CLAUDE_LEARNINGS_DIR`, split into _Implementation_ and
   _Architecture & design_ learnings. It writes **nothing** when a session taught nothing.
-- **Index** — the same hook rebuilds two Markdown indexes, and does so on every session end
-  whether or not a learning was written: `_VAULT_INDEX.md` at the vault root (one row per note
-  in the whole vault — path, tags, what it covers) and `Project Learnings/_INDEX.md` (the
-  session notes, with date and project). `vault_index.mjs` owns both; run it standalone
-  (`node .claude/hooks/vault_index.mjs`) to refresh without ending a session.
+- **Index** — **not this repo's job.** `python-harness` owns both indexes: `_VAULT_INDEX.md`
+  at the vault root (one row per note in the whole vault) and `Project Learnings/_INDEX.md`
+  (the session notes, with date and project). It rebuilds them when a session ends there.
 - **Read** — `/search-second-brain <topic>` reads the indexes, then opens only what matches,
   and reports the pattern across them with citations. Read-only by design.
+
+**Why the indexer lives in one repo only.** An indexer in both is one artifact with two
+writers. This repo shipped a port of `vault_index.py` for exactly one day, and in that time
+the pair re-diverged on a header line inside a single fix cycle — with only one side under
+test, because neither repo's suite can see the other's output. Tests can pin a contract
+between two implementations; they cannot stop the two from disagreeing about what a
+description should say. Deleting the second implementation removes the failure mode instead
+of guarding it.
+
+**The cost, stated plainly.** Notes written from this repo do not appear in either index
+until a session ends in `python-harness`. `/search-second-brain` is built for that: it greps
+the vault as well as reading the indexes, so a lagging index degrades the search rather than
+silently truncating it. If a stretch of frontend-only work has made the index old, run the
+indexer in `python-harness` — do not add one here.
 
 An Obsidian `.base` file is a **query evaluated by Obsidian's UI**, so reading one returns the
 query, never any notes. Bases are for the human; the Markdown indexes are for the agent.
 
-**`vault_index.mjs` has a twin in `python-harness`, and both write the same file in the same
-vault.** Whichever harness ends a session last wins, so the two must produce byte-identical
-output. Change the description heuristic in one and you must change it in the other, or the
-index quietly means something different depending on which repo you worked in last.
-
 Set `CLAUDE_LEARNINGS_DIR` in **user** settings, never in this repo's committed
 `.claude/settings.json` — a clone must not inherit a path to somebody else's vault.
-`CLAUDE_VAULT_DIR` sets the vault root, and defaults to the parent of the learnings directory,
-so the usual layout needs no second variable.
+`CLAUDE_VAULT_DIR` stays optional: no hook here needs it, since nothing here indexes, but
+`/search-second-brain` uses it to locate the vault root it greps, falling back to the parent
+of the learnings directory.
 
 Three tiers, deliberately: memory is for this project's facts, the second brain is for
 transferable lessons across projects, and `CLAUDE.md` / `docs/architecture.md` / the nested
