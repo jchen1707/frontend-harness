@@ -14,7 +14,6 @@
       "Bash(pnpm exec:*)",
       "Bash(npx playwright:*)",
       "Bash(npx lhci:*)",
-      "Bash(node .claude/hooks/vault_index.mjs)",
       "Bash(git status)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
