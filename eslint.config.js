@@ -10,7 +10,18 @@ import tseslint from 'typescript-eslint';
 // Flat config. Mirrors the broad rule selection of the Python harness's ruff setup.
 export default tseslint.config(
   {
-    ignores: ['dist', 'coverage', 'playwright-report', 'test-results', '.lighthouseci'],
+    ignores: [
+      'dist',
+      'coverage',
+      'playwright-report',
+      'test-results',
+      '.lighthouseci',
+      // Dynamic workflows run inside Claude Code's own module wrapper, where a
+      // top-level `return` and the injected `agent` / `pipeline` globals are legal.
+      // ESLint parses them as plain ESM and rejects both. The runner owns this file's
+      // semantics, not the linter.
+      '.claude/workflows/**',
+    ],
   },
 
   // Type-aware linting for application + test sources.

@@ -3,6 +3,10 @@
     "playwright": {
       "command": "npx",
       "args": ["@playwright/mcp@latest", "--headless", "--isolated"]
+    },
+    "typescript-lsp": {
+      "command": "mcp-language-server",
+      "args": ["--workspace", ".", "--lsp", "typescript-language-server", "--", "--stdio"]
     }
   }
 }

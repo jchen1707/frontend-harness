@@ -170,7 +170,7 @@ Baseline: route-level code-splitting (`React.lazy` + `Suspense`), measured memoi
 
 - **Offline unit/component tests (default).** Vitest + Testing Library + jsdom, with **MSW** intercepting all network (`onUnhandledRequest: 'error'` — unmocked requests fail). Inject `Fake*` repositories for pure logic; use MSW to exercise the HTTP/validation path. No real network, ever. Worked example: `src/features/health/services/useHealth.test.tsx`. Colocate as `*.test.ts(x)` next to the unit.
 - **E2E (Playwright).** Scripted specs in `e2e/` run against the real dev server (`playwright.config.ts` boots `pnpm dev`) — the frontend analog of testcontainers integration tests. Run with `pnpm test:e2e`. Worked example: `e2e/smoke.spec.ts`.
-- **Agent-driven Playwright MCP.** For interactive verification during `/run`/`/review`. Prefer the accessibility-tree snapshot (text); **screenshots are image inputs and require explicit user consent** (see CLAUDE.md Guardrails).
+- **Agent-driven Playwright MCP.** For interactive verification during `/run`/`/verify`. Prefer the accessibility-tree snapshot (text); **screenshots are image inputs and require explicit user consent** (see CLAUDE.md Guardrails).
 - Don't edit a test to make it pass — diagnose the root cause.
 
 ---
