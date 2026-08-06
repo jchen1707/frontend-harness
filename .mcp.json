@@ -1,8 +1,16 @@
 {
   "mcpServers": {
-    "playwright": {
+    "chrome-devtools": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest", "--headless", "--isolated"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest",
+        "--headless",
+        "--isolated",
+        "--redact-network-headers",
+        "--no-usage-statistics",
+        "--no-performance-crux"
+      ]
     },
     "typescript-lsp": {
       "command": "mcp-language-server",

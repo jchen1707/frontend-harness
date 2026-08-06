@@ -36,12 +36,23 @@ no layout engine; a passing test there proves nothing about it.
 6. **Keep the suite small.** E2E cost is paid on every run by everyone. Cover the journeys
    that would be embarrassing to break; push the variations down into Vitest.
 
-## The agent-driven complement
+## Where these specs come from
 
-The Playwright **MCP** server drives a browser interactively during `/run` and `/verify` —
-exploration and one-off verification, where these specs are the regression net. Prefer the
-accessibility snapshot (text) over screenshots.
+The **Chrome DevTools MCP** server drives a browser interactively during `/run` and `/verify`.
+That is the fast loop — building, iterating on design, debugging, profiling. It has no runner
+and no assertions, so it can prove a thing works today and nothing more.
 
-> **Image-input consent (hard rule).** A screenshot, including Playwright MCP
-> `browser_take_screenshot`, feeds an image into the model. Stop and ask the user for
-> permission first. See CLAUDE.md → Guardrails.
+These specs are the other half: **explore there, promote here.** When a behaviour settles,
+write it down as a spec. The test to write is the one that would have caught the bug you just
+fixed by hand.
+
+Two directions to resist:
+
+- **Do not leave user-visible behaviour covered only by an agent walkthrough.** It costs
+  tokens every run, and it cannot fail a build after everyone has forgotten the session.
+- **Do not write a spec for everything you inspected.** Most of a fast-loop session is
+  looking around. Promote the outcome, not the journey — see "Keep the suite small" above.
+
+> **Image-input consent (hard rule).** A screenshot (`take_screenshot`) or a screencast feeds
+> an image into the model. Stop and ask the user for permission first; prefer `take_snapshot`,
+> which is text. See CLAUDE.md → Guardrails.

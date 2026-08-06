@@ -45,7 +45,14 @@ Read the diff, then read enough of the render path to tell how often the code ac
 because the cost is paid by every consumer.
 
 Where `lighthouserc.json` sets a budget, check the change against it rather than against your
-intuition.
+intuition — but know its limits: only the accessibility assertion is `error`, and the
+performance category currently scores `null` because the pinned Lighthouse cannot trace
+against the installed Chrome. A budget that measured nothing is not evidence.
+
+Where a claim needs a number and you have none, a real trace beats an argument. The
+`chrome-devtools` MCP server records one — `performance_start_trace` with `reload`, then
+`performance_analyze_insight` for the specific insight (`LCPBreakdown`, `DocumentLatency`).
+You still have read-only tools for the code: measure, then report.
 
 ## Reporting rules
 

@@ -55,4 +55,4 @@ This command supplies all three.
    what's left, and anything the plan got wrong.
 
 > Do not feed any image into the model without explicit user permission (CLAUDE.md
-> Guardrails). Verify visually with the Playwright MCP accessibility snapshot instead.
+> Guardrails). Verify with the Chrome DevTools MCP `take_snapshot` (text a11y tree) instead.
