@@ -33,12 +33,17 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-With `--perf`, run the performance budget against a production build:
+With `--perf`, run the Lighthouse assertions against a production build:
 
 ```sh
 pnpm build
 pnpm lhci
 ```
+
+**`pnpm lhci` exits 0 more readily than it looks.** Only the accessibility assertion is
+`error`; performance, best-practices and SEO are `warn`. Read the assertion output, not the
+exit code — and check that performance produced a **score at all**. A category reported as
+`NaN` or `null` means Lighthouse could not measure it, which is not a pass. Say so.
 
 ## Reporting
 
@@ -56,8 +61,9 @@ Three failure modes to call out explicitly rather than glossing:
   open: a file no element pattern classifies is simply unchecked, so the architectural rule
   can pass vacuously. If the diff added a directory shape the config does not name, report
   the gate as **not covering** that file.
-- **A gate could not run** (browsers not installed, no build output for Lighthouse). That is
-  not a pass. Report it as skipped, with the reason.
+- **A gate could not run** (browsers not installed, no build output for Lighthouse), or ran
+  and measured nothing. That is not a pass. Report it as skipped or unmeasured, with the
+  reason.
 
 ## Verifying in a browser
 
