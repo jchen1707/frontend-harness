@@ -43,14 +43,14 @@ many turns. Starting one must be the user's explicit act.
 
 Each names its own stop condition. Use these verbatim unless the user overrides.
 
-| Goal           | Stop condition                                                                                                                                                                              |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `docs`         | Every claim in `CLAUDE.md`, `README.md`, `docs/architecture.md` and the nested `CLAUDE.md` files matches the code; every documented command runs; no reference to a deleted file or command |
-| `architecture` | `pnpm lint` green with no `boundaries/dependencies` violation; every `src/**` file is classified by an element pattern in `eslint.config.js` (no file passing the rule vacuously)           |
-| `a11y`         | Every interactive element in `src/` is reachable and operable by keyboard, has an accessible name, and exposes its state; every async result has a live region; `pnpm lint` green           |
-| `tests`        | Every exported function and every rendered state in `src/` has at least one test exercising real behaviour; every case in the test plan is covered; `pnpm test` green                       |
-| `perf`         | `pnpm lhci` meets every assertion in `lighthouserc.json`; every route is code split; no request waterfall on the initial render of any route                                                |
-| `deps`         | Every dependency in `package.json` is used; nothing used is missing; the approved-stack table in `CLAUDE.md` matches what is installed                                                      |
+| Goal           | Stop condition                                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs`         | Every claim in `CLAUDE.md`, `README.md`, `docs/architecture.md` and the nested `CLAUDE.md` files matches the code; every documented command runs; no reference to a deleted file or command                                     |
+| `architecture` | `pnpm lint` green with no `boundaries/dependencies` violation; every `src/**` file is classified by an element pattern in `eslint.config.js` (no file passing the rule vacuously)                                               |
+| `a11y`         | Every interactive element in `src/` is reachable and operable by keyboard, has an accessible name, and exposes its state; every async result has a live region; `pnpm lint` green                                               |
+| `tests`        | Every exported function and every rendered state in `src/` has at least one test exercising real behaviour; every case in the test plan is covered; `pnpm test` green                                                           |
+| `perf`         | `pnpm lhci` scores every category — none reported `null` — and meets every assertion in `lighthouserc.json` at `error` **and** `warn` level; every route is code split; no request waterfall on the initial render of any route |
+| `deps`         | Every dependency in `package.json` is used; nothing used is missing; the approved-stack table in `CLAUDE.md` matches what is installed                                                                                          |
 
 ## Running unattended
 
