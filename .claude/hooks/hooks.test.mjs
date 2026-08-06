@@ -7,9 +7,12 @@
  * a narrower gate looks exactly like a passing one.
  */
 
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
-import { describe as describeNote, frontMatter, truncate } from './vault_index.mjs';
+import { build, describe as describeNote, frontMatter, truncate } from './vault_index.mjs';
 import { globToRegExp } from './protect_paths.mjs';
 import { GATED_EXTENSIONS, GATED_FILES, GATED_PATHS, isGated, porcelainPath } from './verify.mjs';
 
@@ -94,5 +97,38 @@ describe('vault index', () => {
 
   it('cuts a long description on a word boundary', () => {
     expect(truncate('word '.repeat(60))).toMatch(/word…$/);
+  });
+});
+
+/**
+ * `vault_index.mjs` has a twin — `python-harness/.claude/hooks/vault_index.py` — and both
+ * write the same `_VAULT_INDEX.md` into the same vault. Whichever harness ends a session
+ * last wins, so any difference in their output makes the file churn on every alternation,
+ * which trains a reader to ignore diffs in it. These pin the two properties that made them
+ * differ when the twins were first compared.
+ */
+describe('twin compatibility', () => {
+  // This directory as a vault. It holds no notes, which is fine — the two properties
+  // under test live in the generated header, not in the rows.
+  const index = build(dirname(fileURLToPath(import.meta.url)));
+
+  it('actually rendered an index', () => {
+    // Guards the two assertions below against passing vacuously on an empty string, which
+    // is what a `build` that threw and got swallowed would produce.
+    expect(index).toContain('# Vault index');
+    expect(index).toContain('| Note | Tags | What it covers |');
+  });
+
+  it('emits LF only, never CRLF', () => {
+    // Python's `Path.write_text` uses text mode, which translates \n to \r\n on Windows.
+    // Node does not translate. If this side ever gains CR, the whole file diffs every time
+    // the other harness rewrites it.
+    expect(index).not.toContain('\r');
+  });
+
+  it('names no harness-specific refresh command in the generated header', () => {
+    // The header is the one line that tempted each implementation to describe itself.
+    // It must read the same whichever harness wrote the file.
+    expect(index).not.toMatch(/uv run|vault_index\.(py|mjs)/);
   });
 });
