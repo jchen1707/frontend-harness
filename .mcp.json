@@ -18,10 +18,6 @@
       "headers": {
         "Authorization": "Bearer ${LINEAR_API_KEY}"
       }
-    },
-    "typescript-lsp": {
-      "command": "mcp-language-server",
-      "args": ["--workspace", ".", "--lsp", "typescript-language-server", "--", "--stdio"]
     }
   }
 }

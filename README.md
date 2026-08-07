@@ -102,18 +102,15 @@ The committed config runs `--headless --isolated`, so the agent gets a throwaway
 profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
 and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
 
-### Symbol navigation (optional, once per machine)
+### Symbol navigation — not available
 
-`.mcp.json` declares a `typescript-lsp` server so agents can resolve TypeScript **symbols**
-instead of grepping for text. Both binaries must be on `PATH`:
+There is **no working symbol navigation for TypeScript here**, and nothing to install. The
+`typescript-lsp` server this repo used to declare was removed after it turned out not to
+resolve anything; `CLAUDE.md` → Symbol navigation records exactly what was tried and how each
+attempt failed, so the next person does not repeat it.
 
-```sh
-npm install -g typescript typescript-language-server
-go install github.com/isaacphi/mcp-language-server@latest   # then add GOPATH/bin to PATH
-```
-
-MCP servers load at session start, so a fresh install needs a restart. Confirm with `/mcp`.
-When to prefer it over grep: `CLAUDE.md` → Symbol navigation.
+Agents use grep, and `CLAUDE.md` says what grep cannot see. `pnpm typecheck` is what tells
+you whether a rename actually landed.
 
 ### Linear (optional, once per machine)
 
