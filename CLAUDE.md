@@ -10,12 +10,14 @@ ecosystem.
 Everything runs through `pnpm`. Gates, in the order `/verify` runs them:
 
 ```sh
-pnpm lint            # ESLint, incl. the machine-enforced dependency rule
-pnpm format:check    # Prettier
-pnpm typecheck       # tsc --noEmit, strict
-pnpm test            # Vitest — unit + component, offline via MSW
-pnpm test:e2e        # Playwright, real browser (needs `pnpm exec playwright install chromium`)
+pnpm lint
+pnpm format:check
+pnpm typecheck
+pnpm test
+pnpm test:e2e
 ```
+
+`pnpm test:e2e` needs a browser binary first: `pnpm exec playwright install chromium`.
 
 `pnpm dev` starts Vite on http://localhost:5173. `pnpm build` type-checks and builds to
 `dist/`. `pnpm lhci` runs the Lighthouse budgets against that build.
@@ -312,12 +314,11 @@ calling it done.
 changed neither. If cross-browser coverage is ever needed, add a WebKit project to
 `playwright.config.ts` — real regression coverage — rather than a second MCP server.
 
-The server runs `--headless --isolated`, so it gets a throwaway profile and never touches a
-real browsing session. It also runs `--redact-network-headers` (so `Authorization` and
-cookies do not land in the transcript), `--no-usage-statistics` and `--no-performance-crux`
-(so neither usage data nor traced URLs leave the machine). Attaching to a live Chrome with
-`--browserUrl` or `--autoConnect` means acting as the logged-in user; that is a deliberate,
-per-task decision, never the committed default.
+The flags in `.mcp.json` are deliberate. They give the server a throwaway profile, keep
+`Authorization` and cookies out of the transcript, and stop usage data and traced URLs
+leaving the machine. Keep them. Attaching to a live Chrome with `--browserUrl` or
+`--autoConnect` means acting as the logged-in user; that is a deliberate, per-task decision,
+never the committed default.
 
 ## Environment
 
@@ -349,30 +350,12 @@ When compacting, preserve the list of modified files and the commands needed to 
 A layer above memory, in the user's own notes rather than the agent's:
 
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
-  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`, split into _Implementation_ and
-  _Architecture & design_ learnings. It writes **nothing** when a session taught nothing.
-- **Index** — **not this repo's job.** `python-harness` owns both indexes: `_VAULT_INDEX.md`
-  at the vault root (one row per note in the whole vault) and `Project Learnings/_INDEX.md`
-  (the session notes, with date and project). It rebuilds them when a session ends there.
-- **Read** — `/search-second-brain <topic>` reads the indexes, then opens only what matches,
-  and reports the pattern across them with citations. Read-only by design.
-
-**Why the indexer lives in one repo only.** An indexer in both is one artifact with two
-writers. This repo shipped a port of `vault_index.py` for exactly one day, and in that time
-the pair re-diverged on a header line inside a single fix cycle — with only one side under
-test, because neither repo's suite can see the other's output. Tests can pin a contract
-between two implementations; they cannot stop the two from disagreeing about what a
-description should say. Deleting the second implementation removes the failure mode instead
-of guarding it.
-
-**The cost, stated plainly.** Notes written from this repo do not appear in either index
-until a session ends in `python-harness`. `/search-second-brain` is built for that: it greps
-the vault as well as reading the indexes, so a lagging index degrades the search rather than
-silently truncating it. If a stretch of frontend-only work has made the index old, run the
-indexer in `python-harness` — do not add one here.
-
-An Obsidian `.base` file is a **query evaluated by Obsidian's UI**, so reading one returns the
-query, never any notes. Bases are for the human; the Markdown indexes are for the agent.
+  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`. It writes **nothing** when a session
+  taught nothing.
+- **Index** — **not this repo's job.** `python-harness` owns both indexes and rebuilds them
+  when a session ends there. **Never add an indexer here.**
+  `/search-second-brain` explains why, and covers the resulting lag.
+- **Read** — `/search-second-brain <topic>`. Read-only by design.
 
 Set `CLAUDE_LEARNINGS_DIR` in **user** settings, never in this repo's committed
 `.claude/settings.json` — a clone must not inherit a path to somebody else's vault.
