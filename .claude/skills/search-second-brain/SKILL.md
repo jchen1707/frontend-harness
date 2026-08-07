@@ -109,6 +109,22 @@ hard-won conclusions, and blurring that makes the second brain untrustworthy.
 
 Offer the alternative instead: answer from first principles, clearly labelled as such.
 
+## Why the indexer lives in one repo only
+
+Read this before you propose fixing the lag by adding an indexer here. Do not add one.
+
+An indexer in both repos is one artifact with two writers. This repo shipped a port of
+`vault_index.py` for exactly one day. In that time the pair re-diverged on a header line
+inside a single fix cycle — with only one side under test, because neither repo's suite can
+see the other's output. Tests can pin a contract between two implementations. They cannot
+stop the two from disagreeing about what a description should say. Deleting the second
+implementation removes the failure mode instead of guarding it.
+
+So the cost is stated plainly: notes written from this repo do not appear in either index
+until a session ends in `python-harness`. The grep in step 2 is what makes that a degraded
+search rather than a silently truncated one. If a stretch of frontend-only work has made the
+index old, run the indexer in `python-harness`.
+
 ## Escalating a pattern
 
 When a lesson recurs across several sessions, it has outgrown the vault. Propose promoting it
