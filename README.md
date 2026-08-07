@@ -102,18 +102,26 @@ The committed config runs `--headless --isolated`, so the agent gets a throwaway
 profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
 and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
 
-### Symbol navigation (optional, once per machine)
+### Symbol navigation (once per machine)
 
-`.mcp.json` declares a `typescript-lsp` server so agents can resolve TypeScript **symbols**
-instead of grepping for text. Both binaries must be on `PATH`:
+Agents resolve TypeScript **symbols** — definitions, references, types — through Claude
+Code's built-in `LSP` tool instead of grepping for text. Two steps, both one-off:
 
 ```sh
-npm install -g typescript typescript-language-server
-go install github.com/isaacphi/mcp-language-server@latest   # then add GOPATH/bin to PATH
+npm install -g typescript-language-server
+claude plugin install typescript-lsp@claude-plugins-official
 ```
 
-MCP servers load at session start, so a fresh install needs a restart. Confirm with `/mcp`.
-When to prefer it over grep: `CLAUDE.md` → Symbol navigation.
+Then restart. LSP servers load at session start, like MCP servers.
+
+**A clone does not inherit this.** `.claude/settings.json` lists the plugin under
+`enabledPlugins`, but that only _enables_ an already-installed plugin — it does not fetch one,
+so the `claude plugin install` line above is not optional. Confirm with
+`claude plugin details typescript-lsp@claude-plugins-official`, which should report
+`LSP servers (1) typescript`.
+
+It runs out of process and costs **no tokens per session**. When to prefer it over grep, and
+the two position gotchas that waste a call: `CLAUDE.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 

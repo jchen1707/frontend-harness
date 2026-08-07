@@ -29,10 +29,11 @@
     "deny": ["Bash(git reset --hard:*)", "Bash(git push --force:*)", "Bash(git push -f:*)"]
   },
   "enabledPlugins": {
-    "mattpocock-skills@mattpocock": true
+    "mattpocock-skills@mattpocock": true,
+    "typescript-lsp@claude-plugins-official": true
   },
   "plansDirectory": ".claude/plans",
-  "enabledMcpjsonServers": ["chrome-devtools", "linear", "typescript-lsp"],
+  "enabledMcpjsonServers": ["chrome-devtools", "linear"],
   "hooks": {
     "PreToolUse": [
       {

@@ -115,31 +115,46 @@ signal is the whole point.
 
 ## Symbol navigation (LSP) — prefer it to grep
 
-`typescript-lsp` in `.mcp.json` runs `typescript-language-server` behind MCP. It answers
-questions about **symbols**, where grep answers questions about **text**.
+The built-in **`LSP` tool** answers questions about **symbols**, where grep answers questions
+about **text**. It is backed by `typescript-language-server`, registered through the
+`typescript-lsp` plugin. It runs out of process and adds **no tokens** to a session.
 
 Use it when the question is semantic:
 
-| Question                                | Tool            |
-| --------------------------------------- | --------------- |
-| Where is this defined?                  | `definition`    |
-| What calls this?                        | `references`    |
-| What type is this, what does it accept? | `hover`         |
-| What errors does this file have?        | `diagnostics`   |
-| Rename this symbol everywhere           | `rename_symbol` |
+| Question                                | Operation                         |
+| --------------------------------------- | --------------------------------- |
+| Where is this defined?                  | `goToDefinition`                  |
+| What uses this?                         | `findReferences`                  |
+| What type is this, what does it accept? | `hover`                           |
+| Where is this interface implemented?    | `goToImplementation`              |
+| What is in this file?                   | `documentSymbol`                  |
+| Where is a symbol I only know by name?  | `workspaceSymbol` (pass `query`)  |
+| What calls this, or what does it call?  | `incomingCalls` / `outgoingCalls` |
 
 Grep matches strings. It cannot tell a definition from a call, a component from a same-named
-type, a real use from a mention in a comment or a JSX string. On a name like `Button`, `use`,
-`request` or `env`, grep returns noise and you guess. It is also blind to re-exports, which is
-exactly how this codebase publishes a slice's surface.
+type, a real use from a mention in a comment or a JSX string, and it is blind to re-exports —
+which is exactly how a slice publishes its surface through `index.ts`. On a name like
+`Button`, `use`, `request` or `env`, grep returns noise and you guess.
 
 **Rule: if you are about to grep for a TypeScript symbol, use the LSP instead.** Keep grep for
 what it is good at — text that is not a symbol: Tailwind classes, copy strings, config keys,
 TODO markers, prose in Markdown.
 
-The server is declared with `--workspace .`, so it resolves to whatever clone it starts in.
-Check it with `/mcp`. MCP servers load at session start, so a fresh install needs a restart.
-One-time machine setup is in the README.
+Two things that waste a call if you get them wrong:
+
+- **Line and character are both 1-based, and the position must sit _on_ the symbol.** A cursor
+  one column off returns "No definition found", which reads exactly like "this symbol has no
+  definition". Count to the identifier, do not aim at the assignment.
+- **`workspaceSymbol` needs its `query`.** Empty queries return nothing from most servers.
+
+**It is configured as a plugin, not in `.mcp.json`.** Declaring `typescript-language-server`
+behind `mcp-language-server` was tried and does not work: that bridge fails to start against
+`tsls`, and against `vtsls` it lists all six tools while resolving nothing and crashes on
+`hover`. `mcp-language-server` is right for pyright in `python-harness` and wrong here. Do not
+reintroduce it — and if you ever swap the backing server, prove a real `goToDefinition` and
+`hover` against this repo rather than trusting a connected-looking server.
+
+Setup is one command per machine and a clone does not inherit it — see the README.
 
 ## Standards
 

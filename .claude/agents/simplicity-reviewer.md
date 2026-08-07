@@ -37,9 +37,9 @@ author if you do it too.
 ## Method
 
 Read the diff, then check the claim. "Nobody calls this" needs a search before you say it —
-prefer the `typescript-lsp` MCP server's `references` over grep, because grep cannot tell a
-call from a mention. A cut proposed on a wrong assumption costs more than the complexity it
-removes.
+prefer the `LSP` tool's `findReferences` over grep, because grep cannot tell a call from a
+mention in a comment or a JSX string, and it is blind to re-exports through a slice's
+`index.ts`. A cut proposed on a wrong assumption costs more than the complexity it removes.
 
 Weigh each cut: how many lines it removes, and what it costs if the speculative case does
 arrive. Where the answer is "the abstraction is cheap to add later", say so — that is the
