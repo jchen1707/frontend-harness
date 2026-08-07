@@ -113,40 +113,48 @@ signal is the whole point.
   `REVIEW_BASE` says otherwise (`$env:REVIEW_BASE = "..."`). Nine agents is real spend — reach
   for `/code-review` (two axes) by default and this when the diff warrants it.
 
-## Symbol navigation — there is none, and grep is what you have
+## Symbol navigation (LSP) — prefer it to grep
 
-This harness **ships no working symbol navigation for TypeScript.** The `typescript-lsp`
-server it used to declare has been removed because it did not work, and a rule pointing at a
-tool that returns nothing is worse than no rule.
+The built-in **`LSP` tool** answers questions about **symbols**, where grep answers questions
+about **text**. It is backed by `typescript-language-server`, registered through the
+`typescript-lsp` plugin. It runs out of process and adds **no tokens** to a session.
 
-What was tried, so nobody repeats it:
+Use it when the question is semantic:
 
-| Attempt                                              | Result                                                                                            |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `mcp-language-server` + `typescript-language-server` | Refuses to start: "Could not find a valid TypeScript installation", on every workspace path shape |
-| `mcp-language-server` + `vtsls`                      | Starts and lists tools, but `workspace/symbol` finds nothing and `hover` fails to deserialise     |
-| Claude Code's built-in `LSP` tool                    | "No LSP server available for file type: .ts"                                                      |
+| Question                                | Operation                         |
+| --------------------------------------- | --------------------------------- |
+| Where is this defined?                  | `goToDefinition`                  |
+| What uses this?                         | `findReferences`                  |
+| What type is this, what does it accept? | `hover`                           |
+| Where is this interface implemented?    | `goToImplementation`              |
+| What is in this file?                   | `documentSymbol`                  |
+| Where is a symbol I only know by name?  | `workspaceSymbol` (pass `query`)  |
+| What calls this, or what does it call?  | `incomingCalls` / `outgoingCalls` |
 
-`typescript-language-server` driven **directly** over LSP works and finds the workspace
-TypeScript, so the fault is in the MCP bridge, not the language server. `mcp-language-server`
-works against pyright in `python-harness`, which is why the pattern was borrowed; it does not
-carry across to TypeScript.
+Grep matches strings. It cannot tell a definition from a call, a component from a same-named
+type, a real use from a mention in a comment or a JSX string, and it is blind to re-exports —
+which is exactly how a slice publishes its surface through `index.ts`. On a name like
+`Button`, `use`, `request` or `env`, grep returns noise and you guess.
 
-So: **use grep, and know what it cannot do.** It matches strings. It cannot tell a definition
-from a call, a component from a same-named type, a real use from a mention in a comment or a
-JSX string, and it is blind to re-exports — which is exactly how a slice publishes its
-surface through `index.ts`. On a name like `Button`, `use`, `request` or `env`, expect noise
-and verify before acting.
+**Rule: if you are about to grep for a TypeScript symbol, use the LSP instead.** Keep grep for
+what it is good at — text that is not a symbol: Tailwind classes, copy strings, config keys,
+TODO markers, prose in Markdown.
 
-Two things partly cover the gap:
+Two things that waste a call if you get them wrong:
 
-- **`pnpm typecheck`** after a rename tells you what you broke, mechanically and completely.
-- **A slice's `index.ts`** is the list of what other slices can reach. Read it before
-  assuming a symbol is private.
+- **Line and character are both 1-based, and the position must sit _on_ the symbol.** A cursor
+  one column off returns "No definition found", which reads exactly like "this symbol has no
+  definition". Count to the identifier, do not aim at the assignment.
+- **`workspaceSymbol` needs its `query`.** Empty queries return nothing from most servers.
 
-Reinstating this means proving the bridge answers a real `definition` and `hover` call
-against this repo — not merely that `/mcp` shows the server as connected. It listed six tools
-while resolving nothing.
+**It is configured as a plugin, not in `.mcp.json`.** Declaring `typescript-language-server`
+behind `mcp-language-server` was tried and does not work: that bridge fails to start against
+`tsls`, and against `vtsls` it lists all six tools while resolving nothing and crashes on
+`hover`. `mcp-language-server` is right for pyright in `python-harness` and wrong here. Do not
+reintroduce it — and if you ever swap the backing server, prove a real `goToDefinition` and
+`hover` against this repo rather than trusting a connected-looking server.
+
+Setup is one command per machine and a clone does not inherit it — see the README.
 
 ## Standards
 

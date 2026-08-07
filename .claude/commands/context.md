@@ -6,7 +6,8 @@ Audit the working context and the three tiers of durable knowledge. Report findi
 write memory or compact without confirmation.
 
 1. **Assess context size.** Summarize what's still relevant to the current task versus what
-   can be dropped. Flag files that were re-read unnecessarily.
+   can be dropped. Flag files that were re-read unnecessarily, or read in full when the `LSP`
+   tool would have answered the question for nothing.
 2. **Check the rule files for staleness or duplication** — `CLAUDE.md`,
    `docs/architecture.md`, and the nested `CLAUDE.md` under `src/` and `e2e/`. A rule stated
    twice is a rule that will disagree with itself. For a full pass, run `/prune-rules`.

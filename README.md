@@ -102,15 +102,26 @@ The committed config runs `--headless --isolated`, so the agent gets a throwaway
 profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
 and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
 
-### Symbol navigation — not available
+### Symbol navigation (once per machine)
 
-There is **no working symbol navigation for TypeScript here**, and nothing to install. The
-`typescript-lsp` server this repo used to declare was removed after it turned out not to
-resolve anything; `CLAUDE.md` → Symbol navigation records exactly what was tried and how each
-attempt failed, so the next person does not repeat it.
+Agents resolve TypeScript **symbols** — definitions, references, types — through Claude
+Code's built-in `LSP` tool instead of grepping for text. Two steps, both one-off:
 
-Agents use grep, and `CLAUDE.md` says what grep cannot see. `pnpm typecheck` is what tells
-you whether a rename actually landed.
+```sh
+npm install -g typescript-language-server
+claude plugin install typescript-lsp@claude-plugins-official
+```
+
+Then restart. LSP servers load at session start, like MCP servers.
+
+**A clone does not inherit this.** `.claude/settings.json` lists the plugin under
+`enabledPlugins`, but that only _enables_ an already-installed plugin — it does not fetch one,
+so the `claude plugin install` line above is not optional. Confirm with
+`claude plugin details typescript-lsp@claude-plugins-official`, which should report
+`LSP servers (1) typescript`.
+
+It runs out of process and costs **no tokens per session**. When to prefer it over grep, and
+the two position gotchas that waste a call: `CLAUDE.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 
