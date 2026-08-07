@@ -240,13 +240,21 @@ Introducing an alternative to any of these means updating `docs/architecture.md`
 
 ## Issue tracker
 
-**Linear**, via the claude.ai account connector — check with `/mcp`, where it shows as
-_claude.ai Linear_. MCP tools load at session start, so connecting mid-session needs a
-restart. Conventions, tool discovery and wayfinding: `docs/agents/issue-tracker.md`. PRs stay
-on GitHub.
+**Linear**, declared in this repo's `.mcp.json` as a remote server and authenticated with
+`LINEAR_API_KEY` — check with `/mcp`, where it shows as _linear_. MCP servers load at session
+start, so a config or key change needs a restart. Conventions, tool discovery and wayfinding:
+`docs/agents/issue-tracker.md`. PRs stay on GitHub.
 
-Branch as `<type>/<TEAM-NUM>-<slug>` (e.g. `feat/ENG-412-search-filters`) so `/code-review`
-can resolve the originating ticket mechanically.
+**Repo-level on purpose.** The claude.ai account connector is one Linear connection for the
+whole account, so pointing it at a different workspace moves every project at once —
+including `python-harness`, whose triage labels live in a different workspace. A Linear
+personal API key belongs to the workspace it was created in, so declaring the server here
+binds this repo to one workspace and nothing else can drift it.
+
+Workspace **Development**, team **Frontend**, key **`FRO`** — so issues read `FRO-123`. Branch
+as `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`) so `/code-review` can resolve
+the originating ticket mechanically. `BAC` (Backend) is the sibling team in the same
+workspace; it is not this repo's.
 
 ## Guardrails
 

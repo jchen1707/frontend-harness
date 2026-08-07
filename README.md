@@ -115,6 +115,26 @@ go install github.com/isaacphi/mcp-language-server@latest   # then add GOPATH/bi
 MCP servers load at session start, so a fresh install needs a restart. Confirm with `/mcp`.
 When to prefer it over grep: `CLAUDE.md` → Symbol navigation.
 
+### Linear (optional, once per machine)
+
+`.mcp.json` declares Linear as a remote server authenticated with `LINEAR_API_KEY`. Create a
+personal API key at **Linear → Settings → Security & access → Personal API keys**, in the
+workspace this repo should use, then set it **in your environment** — user settings
+(`~/.claude/settings.json` → `env`) or your shell profile:
+
+```jsonc
+// ~/.claude/settings.json   (yours, never the repo's)
+{ "env": { "LINEAR_API_KEY": "lin_api_…" } }
+```
+
+Claude Code expands `${LINEAR_API_KEY}` from the environment, **not** from `.env` — a key
+that only lives in `.env` authenticates nothing.
+
+A personal API key belongs to one workspace, which is the point: it binds this repo to that
+workspace, where the claude.ai account connector would bind your whole account and move every
+project at once. If you were using the connector, disconnect it once this works, or two
+Linear tool surfaces show up and neither says which workspace a write reached.
+
 ### Second brain (optional)
 
 Set `CLAUDE_LEARNINGS_DIR` in your **user** settings — never in this repo's committed
