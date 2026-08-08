@@ -52,20 +52,26 @@ This command supplies all three.
    outstanding. The `Stop` hook re-runs the gates independently, so a turn cannot end on
    failing source under `src/`, `e2e/` or `.claude/hooks/`.
 9. **Update the plans as you go** — tick off Steps in `plan.md` and cases in `test-plan.md` as
-   they land, so an interrupted session can resume from the files. Append divergences under a
-   `## Deviations` heading; never rewrite the approved Goal, Approach or Steps.
+   they land, so an interrupted session can resume from the files. Keep the `Status:` line at
+   the top of `plan.md` current, **in the same turn the state changes** — writing "review is
+   running" and leaving it there after the session ends plants a lie for the next reader.
+   Append divergences under a `## Deviations` heading; never rewrite the approved Goal,
+   Approach or Steps.
    - _Material_ deviation (changed approach, public signature, layer boundary, scope, or an
      open question) → **STOP and re-confirm with the user.**
    - _Immaterial_ (helper names, file splits, fixing pseudocode bugs) → proceed and log it.
 10. **Commit, and open the PR only when asked.** `/implement` commits to the current branch.
     Opening the PR is a separate, explicit step — run `gh pr create` only if the user asks.
     When you do open one:
+    - Run `/preflight` first. It checks the process gates the code gates cannot see — body,
+      tracker, test coverage of the diff, plan status — and produces the Evidence scorecard.
     - The body follows `.github/PULL_REQUEST_TEMPLATE.md`. **Never open a PR with an empty
       body** — fill Summary, What changed, How to demo and Evidence from the plan and the
-      `/verify` output already in hand.
+      `/verify` output already in hand. CI enforces this (`pr-template.yml`).
     - Sync Linear in the same turn: **In Review**, PR attached, evidence commented
       (`docs/agents/issue-tracker.md` → Status sync).
-      Report what landed, what's left, and anything the plan got wrong.
+
+    Report what landed, what's left, and anything the plan got wrong.
 
 > Do not feed any image into the model without explicit user permission (CLAUDE.md
 > Guardrails). Verify with the Chrome DevTools MCP `take_snapshot` (text a11y tree) instead.

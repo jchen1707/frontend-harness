@@ -3,7 +3,9 @@ section. Write in Simplified Technical English. -->
 
 ## Summary
 
-<!-- One paragraph: what this PR delivers and why. Link the Linear issue: FRO-123. -->
+<!-- One paragraph: what this PR delivers and why. Include the magic words
+"Fixes FRO-123" on their own line — Linear's GitHub integration reads them to move the
+issue to In Review on open and Done on merge. -->
 
 ## What changed
 

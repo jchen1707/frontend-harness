@@ -38,6 +38,11 @@ Alignment work needs continuity; execution work needs a clean slate. Keep steps 
 context window — no `/compact`, no `/clear` — so the grilling, spec and tickets build on the
 same thinking. Then start each `/implement` **fresh**, working only from its ticket.
 
+The five main-flow commands are plugin skills marked `disable-model-invocation`: they do not
+appear in the agent's skill listing and only the user can run them
+(`/mattpocock-skills:<name>`). Absence from the listing means user-invocable, not missing —
+do not report them as nonexistent.
+
 **Small work** — anything you could describe in one sentence, or a change you want planned by
 one model and built by another — uses the repo's own path instead:
 
@@ -52,6 +57,10 @@ handoff.
 
 Either path ends the same way: `/verify`, then `/code-review`, then commit. Committing to a
 feature branch and opening a PR needs no permission; committing to `main` does.
+
+On GitHub, adding the `agent-review` label to a PR triggers one CI review pass on the Spec
+and Standards axes (`.github/workflows/agent-review.yml`). It is label-gated because it is
+billed spend, and it needs the `ANTHROPIC_API_KEY` repository secret.
 
 ### Definition of Done
 
@@ -81,6 +90,10 @@ Hooks run in the harness, so they hold regardless of what any instruction here s
 The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it. The
 harness overrides a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck
 on something it cannot fix.
+
+Git-side, husky covers the actor the Stop hook cannot — a human, or a session that skipped
+verify: pre-commit runs `lint-staged` + `typecheck`; pre-push runs `test` + `build`. A push
+cannot reach CI with a broken build.
 
 The gated set is _code the gates check, plus the config that defines them_ — so prose, plans
 and docs still end freely and never burn override budget. Widen it by editing `GATED_PATHS` /

@@ -46,6 +46,11 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
    - Rendering, routing, SEO and performance implications; accessibility for any new
      interaction; risks; the verification steps.
 5. **Write the implementation plan** — overwrite `.claude/plans/plan.md` with:
+   - **Status** — one line at the top: what state the plan is in (`awaiting sign-off`,
+     `approved`, `implementing`, `implemented`, `review clean`). **Update it in the same
+     turn the state changes** — a stale "running" line misleads the session that resumes
+     from this file. A reader must treat any in-progress status from a previous session as
+     unknown, not as fact.
    - **Goal** — what this change delivers.
    - **Context** — findings from step 3 (current state, constraints, files).
    - **Approach** — the design from step 4: slice, layer placement, interfaces, the pattern
