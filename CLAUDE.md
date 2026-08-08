@@ -10,11 +10,11 @@ ecosystem.
 Everything runs through `pnpm`. Gates, in the order `/verify` runs them:
 
 ```sh
-pnpm lint
-pnpm format:check
-pnpm typecheck
-pnpm test
-pnpm test:e2e
+pnpm lint           # eslint + prettier, with eslint-plugin-boundaries
+pnpm format:check   # prettier --check
+pnpm typecheck      # tsc --noEmit, strict
+pnpm test           # Vitest — unit + component, offline via MSW
+pnpm test:e2e       # Playwright — browser
 ```
 
 `pnpm test:e2e` needs a browser binary first: `pnpm exec playwright install chromium`.
@@ -350,7 +350,8 @@ When compacting, preserve the list of modified files and the commands needed to 
 A layer above memory, in the user's own notes rather than the agent's:
 
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
-  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`. It writes **nothing** when a session
+  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`, split into an _Implementation_
+  section and an _Architecture & design_ section. It writes **nothing** when a session
   taught nothing.
 - **Index** — **not this repo's job.** `python-harness` owns both indexes and rebuilds them
   when a session ends there. **Never add an indexer here.**

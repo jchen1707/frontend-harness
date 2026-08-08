@@ -16,6 +16,7 @@ export default tseslint.config(
       'playwright-report',
       'test-results',
       '.lighthouseci',
+      'public/mockServiceWorker.js',
       // Dynamic workflows run inside Claude Code's own module wrapper, where a
       // top-level `return` and the injected `agent` / `pipeline` globals are legal.
       // ESLint parses them as plain ESM and rejects both. The runner owns this file's
