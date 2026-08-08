@@ -24,6 +24,19 @@ does not name. **`eslint-plugin-boundaries` fails open**: a file no element matc
 unchecked, and the rule reports green anyway. A new shape with no pattern is the one way to
 lose the architectural guarantee silently.
 
+## TypeScript boilerplate the compiler demands
+
+React 19 with `strict` + `exactOptionalPropertyTypes` makes two things mandatory, not style:
+
+- **Import the `JSX` namespace explicitly** in every component file that annotates a return
+  type: `import type { JSX } from 'react';`. Without it, `JSX.Element` fails with
+  `Cannot find name 'JSX'`.
+- **Write every optional prop as `Type | undefined`**: `repository?: ProjectsRepository`
+  rejects an explicit `undefined`; `repository?: ProjectsRepository | undefined` accepts it.
+
+Scaffold new `.tsx` files with both from the start; retrofitting them costs a build cycle
+each.
+
 ## What each layer may do
 
 **`ui/`** — renders and handles interaction. It calls **one** service hook and shapes the

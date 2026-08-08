@@ -41,7 +41,22 @@ For each durable, non-obvious lesson:
 Note the division of labour. This command writes **project memory**. The SessionEnd hook
 writes the **second brain** — transferable lessons, in the user's own vault — on its own, with
 no prompting. Do not duplicate a lesson into both: if it is about this project, it is a
-memory; if it would help on an unrelated codebase, let the hook have it.
+memory; if it would help on an unrelated codebase, it belongs in the vault.
+
+**The hook is not guaranteed to run.** It fires only when the session ends cleanly — a closed
+terminal window skips it — and it can fail after firing (`_hook.log` beside the notes records
+every outcome). So when this retro surfaces a lesson that is clearly **transferable** and
+losing it would hurt, do not just "let the hook have it":
+
+1. Check `$CLAUDE_LEARNINGS_DIR` is set. If unset, say so; there is no vault to write.
+2. Ask the user whether to write the vault note now. If yes, write one Markdown file to
+   `$CLAUDE_LEARNINGS_DIR` in the hook's note format — frontmatter (`date`, `project`,
+   `session`, `summary`, `tags: [project-learnings, session-retro]`), then
+   `## Implementation learnings` and/or `## Architecture & design learnings`.
+3. Never touch `_VAULT_INDEX.md` or `_INDEX.md` — `python-harness` owns the indexes.
+
+A note written here and a note the hook writes later do not collide — the hook's filename
+carries the session id. Duplicated content is cheap; a lost lesson is not.
 
 Report what you captured and any promotion you propose. `/context` flags friction you haven't
 captured yet.

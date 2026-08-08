@@ -79,6 +79,37 @@ Issue identifiers are `TEAM-NUMBER` (e.g. `FRO-4521`), not bare integers. A refe
 `#42` in conversation is **not** a Linear id — ask which team it belongs to rather than
 guessing. `#42` in this repo's conversation usually means a GitHub PR.
 
+## Status sync — the issue state must track the work
+
+Nothing moves an issue automatically, and a session can end before a cleanup step runs. So
+each transition happens **in the same turn as the git action that causes it**, not at the end
+of the session. FRO-5 shipped a whole implementation and an open PR while the issue sat in
+Todo — that is the failure this table prevents.
+
+| Moment                       | Action                                                                                                                |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Branch created for `FRO-n`   | Move the issue to **In Progress**                                                                                     |
+| PR opened                    | Move to **In Review**; attach the PR URL to the issue (create-attachment tool); comment with the PR link and evidence |
+| PR merged                    | Move to **Done**                                                                                                      |
+| Work abandoned or superseded | Move to **Cancelled**, with a comment naming the successor                                                            |
+
+A parent issue follows its children: the first child in progress moves the parent to
+**In Progress**; the last child done moves it to **Done**.
+
+### Make it mechanical: Linear's GitHub integration
+
+The table above is doctrine, and doctrine can be skipped. Linear's own GitHub integration
+does most of it deterministically — install it once (Linear → Settings → Integrations →
+GitHub, a human action; an agent cannot do it) and:
+
+- A branch named `feat/FRO-<num>-<slug>` links the PR to the issue automatically.
+- "Fixes FRO-123" in the PR description moves the issue to **In Review** when the PR opens
+  and **Done** when it merges, and attaches the PR.
+
+Once installed, the agent's remaining manual duties shrink to: the **In Progress** move at
+branch creation, the evidence comment, and the parent rollup. Until it is installed, the
+whole table is manual — do not assume the automation exists; check the issue actually moved.
+
 ## Labels vs workflow states
 
 Linear separates **workflow state** (Backlog / Todo / In Progress / Done — a single value that

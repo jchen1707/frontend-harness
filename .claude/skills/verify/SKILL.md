@@ -7,7 +7,7 @@ allowed-tools: Bash(pnpm:*), Bash(npx playwright:*), Read, Grep, Glob
 
 Prove the change works. **Paste real command output — never assert success.**
 
-The same four gates run automatically in the `Stop` hook (`.claude/hooks/verify.mjs`), but
+The same five gates run automatically in the `Stop` hook (`.claude/hooks/verify.mjs`), but
 only when the turn touched gated source or the tool config. Invoke this skill when you want
 the evidence in the transcript, or to cover the cases the hook deliberately skips.
 
@@ -21,7 +21,11 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm build
 ```
+
+`pnpm build` is a gate, not an optional extra: only the build checks the browser target.
+A top-level `await` passes `typecheck` and still fails `vite build` against es2020.
 
 Run `pnpm install` first if dependencies changed.
 

@@ -1,0 +1,32 @@
+# The Definition of Done says a PR with an empty body is not done. This check makes that
+# mechanical: prose rules get skipped, red checks do not. Separate from ci.yml because it
+# must also run on the `edited` event, which would waste the build matrix.
+name: PR template
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+jobs:
+  body:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the PR body against the template
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          fail=0
+          for heading in "## Summary" "## What changed" "## How to demo" "## Evidence"; do
+            if ! grep -qF "$heading" <<<"$PR_BODY"; then
+              echo "::error::PR body is missing '$heading'. Fill .github/PULL_REQUEST_TEMPLATE.md."
+              fail=1
+            fi
+          done
+          # Strip HTML comments (the template's own placeholders) and whitespace; what
+          # remains is the author's actual content.
+          content=$(python3 -c 'import os,re; print(re.sub(r"<!--.*?-->", "", os.environ["PR_BODY"], flags=re.S))' | tr -d '[:space:]')
+          if [ "${#content}" -lt 200 ]; then
+            echo "::error::PR body has ${#content} characters of content after removing template placeholders. Write the sections."
+            fail=1
+          fi
+          exit $fail

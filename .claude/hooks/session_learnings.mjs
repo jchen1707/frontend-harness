@@ -11,6 +11,11 @@
  * note: it dilutes the directory every later search has to sift. The distiller is told to
  * emit a single sentinel when there is no real lesson, and that path exits silently.
  *
+ * **Every run appends one outcome line to `_hook.log`** beside the notes. SessionEnd
+ * stderr is invisible, so before the log a failed distillation looked identical to a
+ * session that taught nothing. Diagnosis: no line for a session means SessionEnd never
+ * fired — a closed terminal window skips it; a `failed:` line names the reason.
+ *
  * Configure with `CLAUDE_LEARNINGS_DIR` (absolute path to the notes directory). Unset
  * means disabled, which is the right default for a harness other people clone — nobody
  * inherits a path to somebody else's vault. Set it in **user** settings, not this repo's
@@ -43,7 +48,7 @@
  */
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, statSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
@@ -107,6 +112,21 @@ Then a blank line, then the first \`##\` heading. No other preamble, no closing 
 
 Output GitHub-flavoured Markdown. Do not include front matter; it is added for you.`;
 
+/**
+ * Append one outcome line to `_hook.log` beside the notes. SessionEnd stderr goes nowhere a
+ * user looks, so without this a failed distillation and a session that taught nothing are
+ * indistinguishable — both leave no note. The log makes the difference readable: no line
+ * means the hook never fired; a `failed:` line names the reason. Never blocks.
+ */
+function logOutcome(directory, project, outcome) {
+  const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
+  try {
+    appendFileSync(join(directory, '_hook.log'), `${stamp} ${project}: ${outcome}\n`, 'utf8');
+  } catch {
+    // A log that cannot be written is not a reason to interfere with ending a session.
+  }
+}
+
 /** Branch, recent commits and dirty files — the facts a model should not have to infer. */
 function gitContext(cwd) {
   const branch = output('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd }) || '(unknown)';
@@ -157,7 +177,11 @@ function readTranscript(path) {
   return joined.length > MAX_TRANSCRIPT_CHARS ? joined.slice(-MAX_TRANSCRIPT_CHARS) : joined;
 }
 
-/** Ask a headless Claude for the lessons. An empty string means "write nothing". */
+/**
+ * Ask a headless Claude for the lessons. Returns `{ text, failure }`: empty text with a
+ * null failure means the session taught nothing; a non-null failure names what broke, so
+ * the log can tell the two apart.
+ */
 function distil(transcript, context) {
   const payload = `${PROMPT}\n\n=== GIT CONTEXT ===\n${context}\n\n=== TRANSCRIPT ===\n${transcript}`;
   const result = spawnSync('claude', ['-p', '--model', MODEL], {
@@ -172,15 +196,15 @@ function distil(transcript, context) {
   });
 
   if (result.error) {
-    process.stderr.write(`session_learnings: could not distil (${result.error.message})\n`);
-    return '';
+    return { text: '', failure: `could not run claude (${result.error.message})` };
   }
   if (result.status !== 0) {
-    process.stderr.write(`session_learnings: claude exited ${result.status}\n`);
-    return '';
+    return { text: '', failure: `claude exited ${result.status}` };
   }
   const text = (result.stdout ?? '').trim();
-  return !text || text.startsWith(NO_LEARNINGS) ? '' : text;
+  if (!text) return { text: '', failure: 'distiller returned empty output' };
+  if (text.startsWith(NO_LEARNINGS)) return { text: '', failure: null };
+  return { text, failure: null };
 }
 
 /** Dated, project-scoped, session-suffixed so two sessions a day cannot collide. */
@@ -217,14 +241,25 @@ async function main() {
   if (!payload) return 0;
 
   const cwd = payload.cwd || process.cwd();
+  const project = basename(cwd) || 'session';
   const transcript = readTranscript(payload.transcript_path ?? '');
-  if (transcript.length < 500) return 0; // Too short to have taught anything.
+  if (transcript.length < 500) {
+    logOutcome(directory, project, 'skipped: transcript under 500 chars');
+    return 0;
+  }
 
-  const distilled = distil(transcript, gitContext(cwd));
-  if (!distilled) return 0;
+  const { text: distilled, failure } = distil(transcript, gitContext(cwd));
+  if (failure) {
+    process.stderr.write(`session_learnings: ${failure}\n`);
+    logOutcome(directory, project, `failed: ${failure}`);
+    return 0;
+  }
+  if (!distilled) {
+    logOutcome(directory, project, 'no learnings: the session taught nothing');
+    return 0;
+  }
 
   const [summary, text] = splitSummary(distilled);
-  const project = basename(cwd) || 'session';
   const sessionId = String(payload.session_id ?? '');
   const target = notePath(directory, project, sessionId);
   const stamp = new Date().toISOString().slice(0, 16).replace('T', ' ');
@@ -242,12 +277,14 @@ async function main() {
     writeFileSync(target, `${front}${text}\n`, 'utf8');
   } catch (error) {
     process.stderr.write(`session_learnings: could not write ${target} (${error.message})\n`);
+    logOutcome(directory, project, `failed: could not write note (${error.message})`);
     return 0;
   }
 
   // No index rebuild here by design — python-harness owns both indexes. See the note at
   // the top of this file.
   process.stderr.write(`session_learnings: wrote ${target}\n`);
+  logOutcome(directory, project, `wrote ${basename(target)}`);
   return 0;
 }
 

@@ -35,12 +35,19 @@ import { fileURLToPath } from 'node:url';
 
 import { readPayload, run, tail } from './lib.mjs';
 
-/** The Definition of Done, in the order `/verify` runs it. */
+/**
+ * The Definition of Done, in the order `/verify` runs it.
+ *
+ * `pnpm build` is a gate because only the build checks the browser target. A top-level
+ * `await` passes `typecheck` and still fails `vite build` against es2020 — that class of
+ * break escaped to CI once (PR #9) and must not again.
+ */
 export const GATES = [
   ['pnpm lint', ['run', 'lint']],
   ['pnpm format:check', ['run', 'format:check']],
   ['pnpm typecheck', ['run', 'typecheck']],
   ['pnpm test', ['run', 'test']],
+  ['pnpm build', ['run', 'build']],
 ];
 
 const MAX_LINES = 40;
