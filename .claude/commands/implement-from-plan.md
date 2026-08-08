@@ -28,7 +28,12 @@ This command supplies all three.
    - the **test cases** from `test-plan.md` as the cases to drive `/tdd` with, and the
      **seams** it names as the pre-agreed seams (`/tdd` requires seams be confirmed before any
      test is written — the test plan is that confirmation);
-   - the **Open questions** from `plan.md`, to raise with the user rather than guess.
+   - the **Open questions** from `plan.md`, to raise with the user rather than guess;
+   - the **Design direction** from `plan.md` as the visual spec for everything under `ui/` —
+     follow it rather than re-deriving taste mid-build. If the plan has none and the work
+     adds user-visible UI, load the `frontend-design` skill before the first component,
+     choose a direction, and log the choice under `## Deviations`. Its tokens land in
+     `tailwind.config.js`, never as arbitrary values.
 5. **Pin the layering — code lands in a slice, not in a folder of its kind.** New code goes in
    `src/features/<slice>/` under the right layer (`ui/` → `services/` → `repositories/` →
    `core`). Cross-feature reuse goes through the other slice's `index.ts`, or gets promoted to
