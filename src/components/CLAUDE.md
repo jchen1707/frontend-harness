@@ -34,6 +34,14 @@ not pre-emptively because it looks reusable. A primitive with one consumer is in
 6. **Tailwind tokens, not arbitrary values.** Compose from `tailwind.config.js`; `w-[437px]`
    in a shared primitive is a magic number every consumer inherits.
 
+## Visual direction
+
+Aesthetic choices — palette, type roles, the signature element — come from the plan's
+**Design direction** section, produced by the `frontend-design` skill at plan time. They are
+not made inside a component PR. A primitive here renders with tokens from
+`tailwind.config.js`; when a direction needs a new token, add the token in the same change.
+No arbitrary values.
+
 ## Accessible by construction
 
 A defect here is multiplied by every consumer, so the accessibility work happens once, at this

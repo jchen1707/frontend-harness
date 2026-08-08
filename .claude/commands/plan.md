@@ -43,6 +43,14 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
    - **The architectural / design pattern for the feature, explicitly chosen and justified**
      (see `docs/architecture.md` §0).
    - **What the slice publishes** through `index.ts`, and what stays internal.
+   - **The visual design direction, when the work adds or reshapes user-visible UI.** Load
+     the `frontend-design` skill and run its brainstorm-and-critique pass against this
+     feature's real subject and content. Three repo rules bind its output: every colour and
+     type value lands as a token in `tailwind.config.js`, never as an arbitrary value; a new
+     typeface is a dependency decision (§14) with a §12 performance cost — justify it or
+     stay with the stack; and its screenshot self-critique needs explicit image-input
+     consent — default to `take_snapshot` and the user's own eyes. Skip this bullet for
+     work with no visual surface.
    - Rendering, routing, SEO and performance implications; accessibility for any new
      interaction; risks; the verification steps.
 5. **Write the implementation plan** — overwrite `.claude/plans/plan.md` with:
@@ -55,6 +63,11 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
    - **Context** — findings from step 3 (current state, constraints, files).
    - **Approach** — the design from step 4: slice, layer placement, interfaces, the pattern
      chosen and why, and the slice's public surface.
+   - **Design direction** — when the work adds or reshapes user-visible UI: the palette as
+     named tokens, the type roles, the layout concept in one sentence or an ASCII
+     wireframe, and the one signature element, from the `frontend-design` pass. Terminal 2
+     follows this instead of re-deriving taste mid-build. Omit the section when there is no
+     visual surface.
    - **Steps** — numbered, concrete, ordered implementation tasks; each names its file(s) and
      layer and is small enough to verify independently. Terminal 2 turns this list into its
      task list.

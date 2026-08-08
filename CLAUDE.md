@@ -62,6 +62,22 @@ On GitHub, adding the `agent-review` label to a PR triggers one CI review pass o
 and Standards axes (`.github/workflows/agent-review.yml`). It is label-gated because it is
 billed spend, and it needs the `ANTHROPIC_API_KEY` repository secret.
 
+### Where `frontend-design` runs
+
+Visual direction is chosen **once, at alignment time**, and recorded — the same rule §0
+applies to architecture. Who invokes the skill depends on the path:
+
+| Path                                               | Invocation                                                                                                                                                                                        |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Small work (`/plan`)                               | Automatic — `/plan` step 4 runs the skill when the work has a visual surface and records the **Design direction** in `plan.md`                                                                    |
+| Main flow (ticket-shaped)                          | **You invoke it** — type `/frontend-design` in the alignment context, after `/to-spec` and before `/to-tickets`, so the direction lands in the spec and tickets inherit it as acceptance criteria |
+| Ad-hoc restyling ("make this look better")         | **You invoke it** directly; the chosen tokens land in `tailwind.config.js` in the same change                                                                                                     |
+| `/implement` on a UI ticket, no direction anywhere | The implementer loads the skill before the first component and logs the choice — the fallback, not the plan                                                                                       |
+
+Wherever it runs, the same three rules bind it: tokens in `tailwind.config.js` (no
+arbitrary values), a new typeface is a §14 dependency decision, and screenshot
+self-critique needs image-input consent.
+
 ### Definition of Done
 
 - All six gate commands above pass (`test:e2e` when UI behaviour changed)
@@ -224,6 +240,7 @@ rewrite.
 | Choosing REST vs GraphQL, or tuning a query    | `docs/architecture.md` §3                               |
 | Promoting a component to the design system     | `src/components/CLAUDE.md`                              |
 | Styling anything                               | `docs/architecture.md` §10                              |
+| Choosing a visual direction for new UI         | the `frontend-design` skill — at plan time, see `/plan` |
 | Building an interaction, a dialog, or a form   | `src/components/CLAUDE.md` → Accessible by construction |
 | Deciding SSR, SSG, or SEO                      | `docs/architecture.md` §7                               |
 | Working on bundle size, caching, or streaming  | `docs/architecture.md` §12                              |
@@ -357,6 +374,11 @@ never the committed default.
 - **`mattpocock-skills` plugin** — declared in `.claude/settings.json`; files live under
   `~/.claude/plugins/`. Installed from upstream's marketplace (`mattpocock/skills`), **not**
   Anthropic's mirror, which lags a version behind. Never vendor them into the repo.
+- **`frontend-design` plugin** (`claude-plugins-official`) — the visual-design skill.
+  Enabled in this repo's `.claude/settings.json` so a clone inherits it. The workflow
+  invokes it **at plan time** (`/plan` → Design direction), not mid-build; three repo rules
+  bind its output — tokens go in `tailwind.config.js`, a new typeface is a §14 dependency
+  decision, and its screenshot self-critique needs image-input consent.
 
 ## Memory
 
