@@ -22,6 +22,22 @@ It doubles as a catalogue of the app's outbound surface, so keep it accurate.
   second permanent handler; a default that returns an error makes every other test fight it.
 - Reset happens between tests, so an override cannot leak into the next one.
 
+## The browser worker
+
+`msw/browser.ts` is the dev-and-E2E worker, started from the entry point when
+`VITE_MOCK_API` is on. Three rules keep it from breaking the app it mocks:
+
+1. **Start it from an async bootstrap function, never with top-level `await`.** The es2020
+   build target rejects top-level `await`, `typecheck` does not check the target, and only
+   `pnpm build` fails — which is why `pnpm build` is a gate.
+2. **Wrap the start in `try/catch` and let the app render on failure.** `start()` can reject
+   on scope conflicts, private-browsing restrictions, or a missing `mockServiceWorker.js`;
+   unguarded, the root stays blank. Log through `core/logger.ts`.
+3. **Fail loudly on unhandled API requests.** The browser default is `bypass`, which lets a
+   missing handler reach a real backend. Use an `onUnhandledRequest` callback that
+   `print.error()`s any request under `VITE_API_BASE_URL`, so dev behaves like the unit
+   suite.
+
 ## Choosing MSW or a fake repository
 
 Both are legitimate; they test different things.

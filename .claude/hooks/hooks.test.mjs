@@ -14,11 +14,24 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { globToRegExp } from './protect_paths.mjs';
-import { GATED_EXTENSIONS, GATED_FILES, GATED_PATHS, isGated, porcelainPath } from './verify.mjs';
+import {
+  GATED_EXTENSIONS,
+  GATED_FILES,
+  GATED_PATHS,
+  GATES,
+  isGated,
+  porcelainPath,
+} from './verify.mjs';
 
 describe('Stop-gate pathspec', () => {
   it('covers the application, its specs and the hooks that enforce the gates', () => {
     expect(GATED_PATHS).toEqual(expect.arrayContaining(['src', 'e2e', '.claude/hooks']));
+  });
+
+  it('keeps the production build in the gate set', () => {
+    // Only the build checks the browser target; a top-level await passes typecheck
+    // and still fails vite build. Dropping this gate re-opens that escape.
+    expect(GATES.map(([label]) => label)).toContain('pnpm build');
   });
 
   it('covers the config files that define the gates', () => {

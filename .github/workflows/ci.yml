@@ -24,6 +24,9 @@ jobs:
       - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
+      # The build is a gate: only it checks the browser target (es2020). Without this
+      # step a build-only break surfaces in the lighthouse job, mislabelled.
+      - run: pnpm build
       # E2E is a single smoke spec — run it once (Linux) rather than per-OS.
       - run: pnpm exec playwright install --with-deps chromium
         if: matrix.os == 'ubuntu-latest'

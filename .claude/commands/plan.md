@@ -54,8 +54,8 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
      layer and is small enough to verify independently. Terminal 2 turns this list into its
      task list.
    - **Verification** — the gates to pass (CLAUDE.md Definition of Done: `pnpm lint`,
-     `pnpm format:check`, `pnpm typecheck`, `pnpm test`; `pnpm test:e2e` when UI behaviour
-     changed; `pnpm lhci` when performance is in scope), then `/code-review`.
+     `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`; `pnpm test:e2e` when
+     UI behaviour changed; `pnpm lhci` when performance is in scope), then `/code-review`.
    - **Open questions** — anything terminal 2 should confirm before/while implementing.
 6. **Write the test plan** — overwrite `.claude/plans/test-plan.md` with:
    - **Scope** — the behaviours that must be covered (tie each back to a plan Step).

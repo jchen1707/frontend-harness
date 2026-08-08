@@ -14,10 +14,14 @@ pnpm lint
 pnpm format:check
 pnpm typecheck
 pnpm test
+pnpm build
 pnpm test:e2e
 ```
 
 `pnpm test:e2e` needs a browser binary first: `pnpm exec playwright install chromium`.
+
+`pnpm build` is a gate, not just a packaging step: only the build checks the browser target
+(es2020), so a top-level `await` passes `typecheck` and still breaks the build.
 
 `pnpm dev` starts Vite on http://localhost:5173. `pnpm build` type-checks and builds to
 `dist/`. `pnpm lhci` runs the Lighthouse budgets against that build.
@@ -51,9 +55,13 @@ feature branch and opening a PR needs no permission; committing to `main` does.
 
 ### Definition of Done
 
-- All five gate commands above pass (`test:e2e` when UI behaviour changed)
+- All six gate commands above pass (`test:e2e` when UI behaviour changed)
 - New behaviour has a test that would fail if the behaviour regressed
 - `/code-review` clean on Standards; clean on Spec when there's an originating ticket
+- The PR body follows `.github/PULL_REQUEST_TEMPLATE.md` — a PR with an empty body is not
+  done. Fill it from the plan and the `/verify` evidence already in hand
+- The Linear issue tracks the work: **In Progress** when the branch starts, **In Review**
+  with the PR attached when it opens — `docs/agents/issue-tracker.md` → Status sync
 - Config and env read only through `src/env.ts`; no secret behind a `VITE_` prefix
 - No stray `console.*` — log through `src/core/logger.ts`
 - Friction worth remembering captured via `/retro`
@@ -351,7 +359,10 @@ A layer above memory, in the user's own notes rather than the agent's:
 
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
   fixes into a dated note under `CLAUDE_LEARNINGS_DIR`. It writes **nothing** when a session
-  taught nothing.
+  taught nothing. Every run appends one outcome line to `_hook.log` beside the notes, so a
+  missing note is diagnosable: no log line means SessionEnd never fired (a closed terminal
+  window skips it); a `failed:` line names the reason. When a session's notes matter, end it
+  cleanly rather than closing the window.
 - **Index** — **not this repo's job.** `python-harness` owns both indexes and rebuilds them
   when a session ends there. **Never add an indexer here.**
   `/search-second-brain` explains why, and covers the resulting lag.

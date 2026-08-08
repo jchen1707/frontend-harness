@@ -36,23 +36,36 @@ This command supplies all three.
    first edit.
 6. **Pin the gates.** The plugin skills say "run typechecking" and "run the test suite"
    generically. Wherever a skill says that, substitute the commands from **CLAUDE.md → Quick
-   commands**: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, and
-   `pnpm test:e2e` when UI behaviour changed. For a single file,
-   `pnpm exec vitest run <path>`.
-7. **Finish to the Definition of Done** (CLAUDE.md). Run `/verify` for the evidence — paste
+   commands**: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`,
+   and `pnpm test:e2e` when UI behaviour changed. For a single file,
+   `pnpm exec vitest run <path>`. `pnpm build` is a gate: only the build checks the browser
+   target, so a top-level `await` passes `typecheck` and still breaks CI.
+7. **Iterate in the browser with Chrome DevTools MCP, not with the Playwright suite.** The
+   fast loop is `pnpm dev` → `navigate_page` → `take_snapshot` (text a11y tree, no consent
+   needed) → `list_console_messages`. Re-running `pnpm test:e2e` to check "did my change
+   render?" is the slow path and asserts nothing new. Playwright is the regression net:
+   when a behaviour settles, write the **minimal** spec into `e2e/` once, run the suite once
+   to prove it, and move on (CLAUDE.md → Browser work: explore → promote).
+8. **Finish to the Definition of Done** (CLAUDE.md). Run `/verify` for the evidence — paste
    the real output rather than asserting the gates passed. Then `/code-review` with the
    merge-base as the fixed point (`git merge-base HEAD main`) and no Standards findings
    outstanding. The `Stop` hook re-runs the gates independently, so a turn cannot end on
    failing source under `src/`, `e2e/` or `.claude/hooks/`.
-8. **Update the plans as you go** — tick off Steps in `plan.md` and cases in `test-plan.md` as
+9. **Update the plans as you go** — tick off Steps in `plan.md` and cases in `test-plan.md` as
    they land, so an interrupted session can resume from the files. Append divergences under a
    `## Deviations` heading; never rewrite the approved Goal, Approach or Steps.
    - _Material_ deviation (changed approach, public signature, layer boundary, scope, or an
      open question) → **STOP and re-confirm with the user.**
    - _Immaterial_ (helper names, file splits, fixing pseudocode bugs) → proceed and log it.
-9. **Commit and stop.** `/implement` commits to the current branch. Opening the PR is a
-   separate, explicit step — run `gh pr create` only if the user asks. Report what landed,
-   what's left, and anything the plan got wrong.
+10. **Commit, and open the PR only when asked.** `/implement` commits to the current branch.
+    Opening the PR is a separate, explicit step — run `gh pr create` only if the user asks.
+    When you do open one:
+    - The body follows `.github/PULL_REQUEST_TEMPLATE.md`. **Never open a PR with an empty
+      body** — fill Summary, What changed, How to demo and Evidence from the plan and the
+      `/verify` output already in hand.
+    - Sync Linear in the same turn: **In Review**, PR attached, evidence commented
+      (`docs/agents/issue-tracker.md` → Status sync).
+      Report what landed, what's left, and anything the plan got wrong.
 
 > Do not feed any image into the model without explicit user permission (CLAUDE.md
 > Guardrails). Verify with the Chrome DevTools MCP `take_snapshot` (text a11y tree) instead.

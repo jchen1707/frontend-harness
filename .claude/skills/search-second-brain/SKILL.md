@@ -101,6 +101,14 @@ Lead with the **pattern**, then the evidence:
 Cite each note by filename and quote the line you are relying on. The user should be able to
 check you without re-searching.
 
+## When a note you expected is missing
+
+A session that should have produced a note but did not is a diagnosable event, not a
+mystery. Read `_hook.log` in `$CLAUDE_LEARNINGS_DIR` — the SessionEnd hook appends one line
+per run: `wrote`, `skipped`, `no learnings`, or `failed:` with the reason. No line at all for
+the session means SessionEnd never fired; a closed terminal window skips it. Report which
+case it was rather than guessing.
+
 ## When the search comes up empty
 
 Say so in one line and stop. Do not reconstruct an answer from general knowledge and present
