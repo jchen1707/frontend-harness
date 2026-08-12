@@ -56,10 +56,13 @@ const MAX_LINES = 40;
 export const GATED_PATHS = ['src', 'e2e', '.claude/hooks'];
 
 /**
- * Individual files that configure the gates themselves; a change breaks them
- * without touching any application code.
+ * Individual files that configure the gates themselves, or that the harness runs
+ * outside them; a change breaks something without touching any application code.
  */
 export const GATED_FILES = new Set([
+  // Not a gate config, but Vitest tests it and a broken edit silently drops the Linear
+  // connection at the next session start, which looks like an outage rather than a bug.
+  '.claude/mcp-headers.mjs',
   'package.json',
   'pnpm-lock.yaml',
   'tsconfig.json',

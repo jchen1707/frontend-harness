@@ -32,8 +32,8 @@ The tracker is **Linear** (see `issue-tracker.md`). State labels are **labels**,
 states — applying one does not move the issue across the board. Set the Linear workflow state
 explicitly when the role implies one.
 
-**These labels are workspace-scoped, and this repo is bound to one workspace by its
-`LINEAR_API_KEY`.** All seven exist in workspace **Development** and were verified there on
+**These labels are workspace-scoped, and this repo is bound to one workspace by the personal
+API key in its `linear-fro` credential slot.** All seven exist in workspace **Development** and were verified there on
 2026-08-06: `Bug` and `Feature` ungrouped, and the five state labels under a `Triage` parent
 group. They are workspace-level, not scoped to `FRO`, so the Backend team shares them.
 

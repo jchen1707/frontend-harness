@@ -23,7 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { globToRegExp } from './protect_paths.mjs';
+import { SLOT_PATTERN, credentialPath, headers, lookupCommand } from '../mcp-headers.mjs';
+import { blockReason, globToRegExp } from './protect_paths.mjs';
 import {
   DISTILLER_MARKER,
   frontMatterValue,
@@ -65,6 +66,11 @@ describe('Stop-gate pathspec', () => {
     }
   });
 
+  it('covers the MCP credential helper, which Vitest tests but no gated path holds', () => {
+    expect(GATED_FILES.has('.claude/mcp-headers.mjs')).toBe(true);
+    expect(isGated('.claude/mcp-headers.mjs')).toBe(true);
+  });
+
   it('gates every source extension the toolchain reads', () => {
     for (const extension of ['.ts', '.tsx', '.js', '.mjs', '.css']) {
       expect(GATED_EXTENSIONS).toContain(extension);
@@ -103,6 +109,136 @@ describe('protected paths', () => {
 
   it('does not treat a dot in a pattern as a regex wildcard', () => {
     expect(matches('pnpm-lock.yaml', 'pnpmXlock.yaml')).toBe(false);
+  });
+});
+
+/**
+ * Reads of the secret files.
+ *
+ * A blocked write is recoverable; a read is not. The value is in the context window, the
+ * transcript on disk and the API request before anyone notices, and rotation is the only
+ * remedy. So `.env` refuses both verbs, and the generated paths keep refusing writes only.
+ */
+describe('protected paths — reads', () => {
+  it('refuses to read a file that holds secrets', () => {
+    expect(blockReason('.env', 'Read')).toMatch(/secrets/);
+    expect(blockReason('.env.local', 'Read')).toMatch(/secrets/);
+    expect(blockReason('.env.production', 'Read')).toMatch(/secrets/);
+  });
+
+  it('still reads the committed template that documents the env contract', () => {
+    // The reason the rule lives in the hook rather than in a permission `deny`: a deny
+    // rule has no exception syntax, so `Read(./.env.*)` would hide this file too.
+    expect(blockReason('.env.example', 'Read')).toBeNull();
+    expect(blockReason('.env.example', 'Write')).toBeNull();
+  });
+
+  it('leaves reads of the write-protected paths alone', () => {
+    // Reading build output or the lockfile costs nothing. Blocking it would turn a
+    // secrecy rule into a general obstruction and train the next author to widen it.
+    expect(blockReason('dist/index.js', 'Read')).toBeNull();
+    expect(blockReason('pnpm-lock.yaml', 'Read')).toBeNull();
+    expect(blockReason('src/api/generated/client.ts', 'Read')).toBeNull();
+  });
+
+  it('keeps refusing every write it refused before', () => {
+    for (const path of [
+      '.env',
+      '.env.local',
+      'pnpm-lock.yaml',
+      'dist/index.js',
+      'src/api/generated/client.ts',
+      'src/api/__generated__/types.ts',
+      'src/api/schema.gen.ts',
+      '.husky/_/pre-commit',
+    ]) {
+      expect(blockReason(path, 'Edit')).not.toBeNull();
+    }
+  });
+
+  it('treats an unknown tool as a write, so a new write tool is covered by default', () => {
+    expect(blockReason('dist/index.js', 'mcp__typescript-lsp__edit_file')).not.toBeNull();
+  });
+});
+
+describe('protected paths — the hook is wired to the read surface', () => {
+  const settings = JSON.parse(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'settings.json'), 'utf8'),
+  );
+
+  it('names Read in the PreToolUse matcher', () => {
+    // The hook enforces nothing on a tool the matcher does not admit. Dropping `Read`
+    // here reopens the gap silently: every test above still passes.
+    const matchers = settings.hooks.PreToolUse.map((entry) => entry.matcher);
+    expect(matchers.some((matcher) => /(^|\|)Read(\||$)/.test(matcher))).toBe(true);
+  });
+
+  it('denies the shell readers the hook cannot see', () => {
+    // Bash payloads carry `command`, not `file_path`, so the hook no-ops on them.
+    expect(settings.permissions.deny).toEqual(
+      expect.arrayContaining(['Bash(cat .env:*)', 'Bash(source .env:*)']),
+    );
+  });
+});
+
+/**
+ * The MCP credential helper.
+ *
+ * The point of the helper is that no environment variable holds the Linear key, so the
+ * regression to catch is a quiet return to `Bearer ${LINEAR_API_KEY}` — which works
+ * identically, and puts the key back where `echo` can reach it.
+ */
+describe('mcp credential helper', () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const mcp = JSON.parse(readFileSync(join(here, '..', '..', '.mcp.json'), 'utf8'));
+
+  it('authenticates Linear through the helper, not through an environment variable', () => {
+    const linear = mcp.mcpServers.linear;
+    expect(linear.headersHelper).toContain('mcp-headers.mjs');
+    // A static header would need the key in Claude Code's env, which every child
+    // process inherits. That is the exposure the helper exists to remove.
+    expect(linear.headers).toBeUndefined();
+    expect(JSON.stringify(mcp)).not.toContain('LINEAR_API_KEY');
+  });
+
+  it('names a credential slot, so a sibling repo can hold a different workspace key', () => {
+    const slot = mcp.mcpServers.linear.headersHelper.trim().split(/\s+/).at(-1);
+    expect(slot).toBe('linear-fro');
+    expect(SLOT_PATTERN.test(slot)).toBe(true);
+  });
+
+  it('rejects a slot name that could reach the shell as syntax', () => {
+    for (const slot of ['', 'a b', "x'; rm -rf /", '../../etc/passwd', 'UPPER', '-lead']) {
+      expect(SLOT_PATTERN.test(slot)).toBe(false);
+    }
+  });
+
+  it('builds the Authorization header the MCP server expects', () => {
+    expect(headers('tok')).toEqual({ Authorization: 'Bearer tok' });
+  });
+
+  it('reads a per-user credential path rather than anything inside the repo', () => {
+    const path = credentialPath('linear-fro', '/home/u').replaceAll('\\', '/');
+    expect(path).toBe('/home/u/.claude/mcp-credentials/linear-fro.cred');
+  });
+
+  it('escapes a quote in the home path before it reaches PowerShell', () => {
+    // A literal `'` would close the PowerShell string and turn the rest into code.
+    // Assert the doubling, not the separators — `join` follows the host platform.
+    const [, args] = lookupCommand('win32', 'linear-fro', "C:/Users/o'brien");
+    expect(args.at(-1)).toContain("o''brien");
+  });
+
+  it('uses the platform credential store on each OS', () => {
+    expect(lookupCommand('win32', 'linear-fro', '/h')[0]).toBe('powershell');
+    expect(lookupCommand('darwin', 'linear-fro', '/h')).toEqual([
+      'security',
+      ['find-generic-password', '-s', 'claude-mcp-linear-fro', '-w'],
+    ]);
+    expect(lookupCommand('linux', 'linear-fro', '/h')).toEqual([
+      'secret-tool',
+      ['lookup', 'service', 'claude-mcp-linear-fro'],
+    ]);
   });
 });
 

@@ -103,6 +103,8 @@ Separate **server state** (TanStack Query / Apollo cache — fetched, cached, in
 
 `src/env.ts` is the **single** place env is read, validated with Zod. Only `VITE_`-prefixed vars are inlined into the browser bundle — treat them as **public**. Real secrets (`ANTHROPIC_API_KEY`, `GH_TOKEN`) stay server/build-side and must never be `VITE_`-prefixed. Never hardcode config; never read `import.meta.env` outside `env.ts`.
 
+**Adding a key of any kind: `docs/secrets.md`.** It covers the three readers (browser, server, Claude Code itself), how to store a value without it reaching shell history or the transcript, and how to rotate one that leaked. The short version: a secret is compromised the moment its value enters a transcript, so `.env` is unreadable to the agent by hook, and keys Claude Code itself reads live in the OS credential store behind a `headersHelper` — never in an environment variable, which every child process inherits, and never in a `settings.json` `env` block, which an agent opens for unrelated edits.
+
 ---
 
 ## §7 SSR / SSG / SEO
@@ -180,3 +182,5 @@ Baseline: route-level code-splitting (`React.lazy` + `Suspense`), measured memoi
 The approved stack is fixed in `package.json`. Adding a new framework/library requires updating CLAUDE.md + this file **first**, with a short rationale. Prefer editing `package.json` then `pnpm install` over ad-hoc `pnpm add`. Keep `pnpm-lock.yaml` committed; CI installs with `--frozen-lockfile`.
 
 > **No `docker-compose.yml`:** a pure frontend has no database. The "real-environment / integration" analog here is Playwright E2E against the dev server. If a project later needs a mock backend or DB, add it then and document it here.
+
+**`secretlint` (devDependency, pre-commit).** Scans every staged file for key patterns and fails the commit on a match. Chosen over `gitleaks`, the usual answer, because `gitleaks` is a Go binary needing a per-machine install that a clone does not inherit — the same friction the LSP setup already carries, and one copy of it is enough. `secretlint` installs from the lockfile, so a clone and CI get it with `pnpm install --frozen-lockfile` and no second setup step. Patterns live in `.secretlintrc.json`: the recommended preset plus this repo's own key shapes (Anthropic, Linear). Adding a provider means adding its pattern there — see `docs/secrets.md`.
