@@ -6,15 +6,17 @@ stay on GitHub** — Linear holds the work item, GitHub holds the diff.
 ## Connecting
 
 Linear is declared in this repo's **`.mcp.json`** as a remote Streamable HTTP server
-(`https://mcp.linear.app/mcp`), authenticated with a bearer token read from
-`LINEAR_API_KEY`.
+(`https://mcp.linear.app/mcp`). Its bearer token comes from a `headersHelper`,
+`.claude/mcp-headers.mjs`, which reads the `linear-fro` slot from the OS credential store at
+connection time. No environment variable holds the key — see `docs/secrets.md` §4.
 
 - Check it with `/mcp`; it appears as **linear**.
-- MCP servers load at **session start**. Changing the config or the key does not take effect
-  until you restart.
-- If the tools are missing, the key is almost always the reason. Confirm `LINEAR_API_KEY` is
-  set **in the environment** — Claude Code expands `${LINEAR_API_KEY}` from there, not from
-  `.env`, so a key that only exists in `.env` will not authenticate anything.
+- MCP servers load at **session start**. Changing the config or the credential does not take
+  effect until you restart.
+- If the tools are missing, run the helper directly:
+  `node .claude/mcp-headers.mjs linear-fro`. It prints a diagnostic naming the slot and exits
+  non-zero when the store has nothing, and it never prints the key. An empty slot means the
+  credential was never stored — `docs/secrets.md` §5 has the command.
 
 ### Why not the claude.ai account connector
 

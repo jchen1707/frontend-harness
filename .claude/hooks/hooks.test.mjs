@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { SLOT_PATTERN, credentialPath, headers, lookupCommand } from '../mcp-headers.mjs';
 import { blockReason, globToRegExp } from './protect_paths.mjs';
 import {
   DISTILLER_MARKER,
@@ -63,6 +64,11 @@ describe('Stop-gate pathspec', () => {
     ]) {
       expect(GATED_FILES.has(file)).toBe(true);
     }
+  });
+
+  it('covers the MCP credential helper, which Vitest tests but no gated path holds', () => {
+    expect(GATED_FILES.has('.claude/mcp-headers.mjs')).toBe(true);
+    expect(isGated('.claude/mcp-headers.mjs')).toBe(true);
   });
 
   it('gates every source extension the toolchain reads', () => {
@@ -172,6 +178,67 @@ describe('protected paths — the hook is wired to the read surface', () => {
     expect(settings.permissions.deny).toEqual(
       expect.arrayContaining(['Bash(cat .env:*)', 'Bash(source .env:*)']),
     );
+  });
+});
+
+/**
+ * The MCP credential helper.
+ *
+ * The point of the helper is that no environment variable holds the Linear key, so the
+ * regression to catch is a quiet return to `Bearer ${LINEAR_API_KEY}` — which works
+ * identically, and puts the key back where `echo` can reach it.
+ */
+describe('mcp credential helper', () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const mcp = JSON.parse(readFileSync(join(here, '..', '..', '.mcp.json'), 'utf8'));
+
+  it('authenticates Linear through the helper, not through an environment variable', () => {
+    const linear = mcp.mcpServers.linear;
+    expect(linear.headersHelper).toContain('mcp-headers.mjs');
+    // A static header would need the key in Claude Code's env, which every child
+    // process inherits. That is the exposure the helper exists to remove.
+    expect(linear.headers).toBeUndefined();
+    expect(JSON.stringify(mcp)).not.toContain('LINEAR_API_KEY');
+  });
+
+  it('names a credential slot, so a sibling repo can hold a different workspace key', () => {
+    const slot = mcp.mcpServers.linear.headersHelper.trim().split(/\s+/).at(-1);
+    expect(slot).toBe('linear-fro');
+    expect(SLOT_PATTERN.test(slot)).toBe(true);
+  });
+
+  it('rejects a slot name that could reach the shell as syntax', () => {
+    for (const slot of ['', 'a b', "x'; rm -rf /", '../../etc/passwd', 'UPPER', '-lead']) {
+      expect(SLOT_PATTERN.test(slot)).toBe(false);
+    }
+  });
+
+  it('builds the Authorization header the MCP server expects', () => {
+    expect(headers('tok')).toEqual({ Authorization: 'Bearer tok' });
+  });
+
+  it('reads a per-user credential path rather than anything inside the repo', () => {
+    const path = credentialPath('linear-fro', '/home/u').replaceAll('\\', '/');
+    expect(path).toBe('/home/u/.claude/mcp-credentials/linear-fro.cred');
+  });
+
+  it('escapes a quote in the home path before it reaches PowerShell', () => {
+    // A literal `'` would close the PowerShell string and turn the rest into code.
+    // Assert the doubling, not the separators — `join` follows the host platform.
+    const [, args] = lookupCommand('win32', 'linear-fro', "C:/Users/o'brien");
+    expect(args.at(-1)).toContain("o''brien");
+  });
+
+  it('uses the platform credential store on each OS', () => {
+    expect(lookupCommand('win32', 'linear-fro', '/h')[0]).toBe('powershell');
+    expect(lookupCommand('darwin', 'linear-fro', '/h')).toEqual([
+      'security',
+      ['find-generic-password', '-s', 'claude-mcp-linear-fro', '-w'],
+    ]);
+    expect(lookupCommand('linux', 'linear-fro', '/h')).toEqual([
+      'secret-tool',
+      ['lookup', 'service', 'claude-mcp-linear-fro'],
+    ]);
   });
 });
 

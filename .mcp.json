@@ -15,9 +15,7 @@
     "linear": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp",
-      "headers": {
-        "Authorization": "Bearer ${LINEAR_API_KEY}"
-      }
+      "headersHelper": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/mcp-headers.mjs\" linear-fro"
     }
   }
 }

@@ -125,18 +125,22 @@ the two position gotchas that waste a call: `CLAUDE.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 
-`.mcp.json` declares Linear as a remote server authenticated with `LINEAR_API_KEY`. Create a
-personal API key at **Linear → Settings → Security & access → Personal API keys**, in the
-workspace this repo should use, then set it **in your environment** — user settings
-(`~/.claude/settings.json` → `env`) or your shell profile:
+`.mcp.json` declares Linear as a remote server whose `Authorization` header comes from
+`.claude/mcp-headers.mjs`, which reads the OS credential store. Create a personal API key at
+**Linear → Settings → Security & access → Personal API keys**, in the workspace this repo
+should use, then store it once — in a real terminal, so the value never reaches an agent:
 
-```jsonc
-// ~/.claude/settings.json   (yours, never the repo's)
-{ "env": { "LINEAR_API_KEY": "lin_api_…" } }
+```powershell
+$dir = Join-Path $env:USERPROFILE '.claude\mcp-credentials'
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+(Read-Host -AsSecureString 'Paste the Linear key') |
+  ConvertFrom-SecureString | Set-Content (Join-Path $dir 'linear-fro.cred')
 ```
 
-Claude Code expands `${LINEAR_API_KEY}` from the environment, **not** from `.env` — a key
-that only lives in `.env` authenticates nothing.
+Restart Claude Code, then check `/mcp`. **Set no environment variable.** The Bash tool
+inherits Claude Code's environment, so a `LINEAR_API_KEY` variable can be printed into a
+transcript by one careless command — and a key in a transcript has to be rotated. See
+`docs/secrets.md` for the full reasoning, the macOS and Linux equivalents, and rotation.
 
 A personal API key belongs to one workspace, which is the point: it binds this repo to that
 workspace, where the claude.ai account connector would bind your whole account and move every

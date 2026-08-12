@@ -298,9 +298,11 @@ Introducing an alternative to any of these means updating `docs/architecture.md`
 
 ## Issue tracker
 
-**Linear**, declared in this repo's `.mcp.json` as a remote server and authenticated with
-`LINEAR_API_KEY` — check with `/mcp`, where it shows as _linear_. MCP servers load at session
-start, so a config or key change needs a restart. Conventions, tool discovery and wayfinding:
+**Linear**, declared in this repo's `.mcp.json` as a remote server and authenticated by
+`headersHelper` → `.claude/mcp-headers.mjs`, which reads the `linear-fro` slot from the OS
+credential store — check with `/mcp`, where it shows as _linear_. No environment variable
+holds the key; `docs/secrets.md` §4 explains why, and why OAuth is not the answer here. MCP
+servers load at session start, so a config or credential change needs a restart. Conventions, tool discovery and wayfinding:
 `docs/agents/issue-tracker.md`. PRs stay on GitHub.
 
 **Repo-level on purpose.** The claude.ai account connector is one Linear connection for the
@@ -332,10 +334,12 @@ workspace; it is not this repo's.
 - **Secrets never reach the transcript.** A key is compromised the moment its value enters
   the context window — it is on disk and in an API request in the same step, and only
   rotation undoes that. So: never print a secret, never read a file to see one, and refer to
-  a key by its variable name. Keys that Claude Code itself reads (`LINEAR_API_KEY`) live in
-  the **OS user environment**, never in a `settings.json` `env` block — that leaves the
-  literal in a plaintext file an agent opens for unrelated edits, which is how this repo
-  lost a key. Adding, setting or rotating any key: **`docs/secrets.md`**.
+  a key by name. Keys that Claude Code itself reads live in the **OS credential store**
+  behind a `headersHelper`, never in an environment variable — the Bash tool is a child
+  process and inherits one, so `echo $KEY` would print it. Never in a `settings.json` `env`
+  block either; that leaves the literal in a plaintext file an agent opens for unrelated
+  edits, which is how this repo lost a key. Adding, storing or rotating any key:
+  **`docs/secrets.md`**.
 
 ## Browser work — two tools, two jobs
 
