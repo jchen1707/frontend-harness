@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { globToRegExp } from './protect_paths.mjs';
+import { blockReason, globToRegExp } from './protect_paths.mjs';
 import {
   DISTILLER_MARKER,
   frontMatterValue,
@@ -103,6 +103,75 @@ describe('protected paths', () => {
 
   it('does not treat a dot in a pattern as a regex wildcard', () => {
     expect(matches('pnpm-lock.yaml', 'pnpmXlock.yaml')).toBe(false);
+  });
+});
+
+/**
+ * Reads of the secret files.
+ *
+ * A blocked write is recoverable; a read is not. The value is in the context window, the
+ * transcript on disk and the API request before anyone notices, and rotation is the only
+ * remedy. So `.env` refuses both verbs, and the generated paths keep refusing writes only.
+ */
+describe('protected paths — reads', () => {
+  it('refuses to read a file that holds secrets', () => {
+    expect(blockReason('.env', 'Read')).toMatch(/secrets/);
+    expect(blockReason('.env.local', 'Read')).toMatch(/secrets/);
+    expect(blockReason('.env.production', 'Read')).toMatch(/secrets/);
+  });
+
+  it('still reads the committed template that documents the env contract', () => {
+    // The reason the rule lives in the hook rather than in a permission `deny`: a deny
+    // rule has no exception syntax, so `Read(./.env.*)` would hide this file too.
+    expect(blockReason('.env.example', 'Read')).toBeNull();
+    expect(blockReason('.env.example', 'Write')).toBeNull();
+  });
+
+  it('leaves reads of the write-protected paths alone', () => {
+    // Reading build output or the lockfile costs nothing. Blocking it would turn a
+    // secrecy rule into a general obstruction and train the next author to widen it.
+    expect(blockReason('dist/index.js', 'Read')).toBeNull();
+    expect(blockReason('pnpm-lock.yaml', 'Read')).toBeNull();
+    expect(blockReason('src/api/generated/client.ts', 'Read')).toBeNull();
+  });
+
+  it('keeps refusing every write it refused before', () => {
+    for (const path of [
+      '.env',
+      '.env.local',
+      'pnpm-lock.yaml',
+      'dist/index.js',
+      'src/api/generated/client.ts',
+      'src/api/__generated__/types.ts',
+      'src/api/schema.gen.ts',
+      '.husky/_/pre-commit',
+    ]) {
+      expect(blockReason(path, 'Edit')).not.toBeNull();
+    }
+  });
+
+  it('treats an unknown tool as a write, so a new write tool is covered by default', () => {
+    expect(blockReason('dist/index.js', 'mcp__typescript-lsp__edit_file')).not.toBeNull();
+  });
+});
+
+describe('protected paths — the hook is wired to the read surface', () => {
+  const settings = JSON.parse(
+    readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'settings.json'), 'utf8'),
+  );
+
+  it('names Read in the PreToolUse matcher', () => {
+    // The hook enforces nothing on a tool the matcher does not admit. Dropping `Read`
+    // here reopens the gap silently: every test above still passes.
+    const matchers = settings.hooks.PreToolUse.map((entry) => entry.matcher);
+    expect(matchers.some((matcher) => /(^|\|)Read(\||$)/.test(matcher))).toBe(true);
+  });
+
+  it('denies the shell readers the hook cannot see', () => {
+    // Bash payloads carry `command`, not `file_path`, so the hook no-ops on them.
+    expect(settings.permissions.deny).toEqual(
+      expect.arrayContaining(['Bash(cat .env:*)', 'Bash(source .env:*)']),
+    );
   });
 });
 

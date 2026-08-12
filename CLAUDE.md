@@ -98,7 +98,7 @@ Hooks run in the harness, so they hold regardless of what any instruction here s
 
 | Hook                                 | Effect                                                                                                                                                                    |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`                                                                                       |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                 |
 | `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                          |
 | `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                    |
 | `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `CLAUDE_LEARNINGS_DIR` is set |
@@ -109,7 +109,9 @@ on something it cannot fix.
 
 Git-side, husky covers the actor the Stop hook cannot — a human, or a session that skipped
 verify: pre-commit runs `lint-staged` + `typecheck`; pre-push runs `test` + `build`. A push
-cannot reach CI with a broken build.
+cannot reach CI with a broken build. `lint-staged` runs `secretlint` over **every** staged
+file, so a commit carrying an API key fails before it exists. `pnpm scan:secrets` scans the
+whole repo.
 
 The gated set is _code the gates check, plus the config that defines them_ — so prose, plans
 and docs still end freely and never burn override budget. Widen it by editing `GATED_PATHS` /
@@ -235,6 +237,7 @@ rewrite.
 | ---------------------------------------------- | ------------------------------------------------------- |
 | Adding a feature, or deciding where code goes  | `src/features/CLAUDE.md`                                |
 | Adding config or an env var                    | `src/core/CLAUDE.md` → Configuration                    |
+| Adding, setting or rotating a secret or key    | `docs/secrets.md`                                       |
 | Adding logging or designing an error type      | `src/core/CLAUDE.md` → Logging, Errors                  |
 | Writing a repository, or validating a response | `src/features/CLAUDE.md` → layers                       |
 | Choosing REST vs GraphQL, or tuning a query    | `docs/architecture.md` §3                               |
@@ -326,6 +329,13 @@ workspace; it is not this repo's.
   this file and `docs/architecture.md` first (§14, Dependency policy).
 - **Secrets never reach the browser.** Only `VITE_`-prefixed env vars are bundled — treat them
   as public. `ANTHROPIC_API_KEY` and `GH_TOKEN` are server and build-side only.
+- **Secrets never reach the transcript.** A key is compromised the moment its value enters
+  the context window — it is on disk and in an API request in the same step, and only
+  rotation undoes that. So: never print a secret, never read a file to see one, and refer to
+  a key by its variable name. Keys that Claude Code itself reads (`LINEAR_API_KEY`) live in
+  the **OS user environment**, never in a `settings.json` `env` block — that leaves the
+  literal in a plaintext file an agent opens for unrelated edits, which is how this repo
+  lost a key. Adding, setting or rotating any key: **`docs/secrets.md`**.
 
 ## Browser work — two tools, two jobs
 
@@ -361,7 +371,8 @@ never the committed default.
 ## Environment
 
 - Secrets live in `.env` (gitignored); `.env.example` lists the keys. `src/env.ts` is the only
-  reader of `import.meta.env`.
+  reader of `import.meta.env`. `protect_paths.mjs` refuses to **read** `.env`, so ask the user
+  to check a value rather than opening the file — `.env.example` stays readable.
 - `GH_TOKEN` needs `repo` + `workflow` scope for PR automation.
 - PowerShell: `$env:VAR = "value"`, backtick continues a line, `;` chains — `&&` does not work
   in 5.1. `pnpm` needs no `cd` prefix.
