@@ -105,7 +105,7 @@ Separate **server state** (TanStack Query / Apollo cache — fetched, cached, in
 
 `src/env.ts` is the **single** place env is read, validated with Zod. Only `VITE_`-prefixed vars are inlined into the browser bundle — treat them as **public**. Real secrets (`ANTHROPIC_API_KEY`, `GH_TOKEN`) stay server/build-side and must never be `VITE_`-prefixed. Never hardcode config; never read `import.meta.env` outside `env.ts`.
 
-**Adding a key of any kind: `docs/secrets.md`.** It covers the three readers (browser, server, Claude Code itself), how to store a value without it reaching shell history or the transcript, and how to rotate one that leaked. The short version: a secret is compromised the moment its value enters a transcript, so `.env` is unreadable to the agent by hook, and keys Claude Code itself reads live in the OS credential store behind a `headersHelper` — never in an environment variable, which every child process inherits, and never in a `settings.json` `env` block, which an agent opens for unrelated edits.
+**Adding a key of any kind: `docs/secrets.md`.** It covers the three readers (browser, server, agent harness), how to store a value without it reaching shell history or the transcript, and how to rotate one that leaked. The short version: a secret is compromised the moment its value enters a transcript, so `.env` is unreadable to the agent by hook, and keys an agent harness reads live in the OS credential store behind a repository launcher — never in an environment variable, which every child process inherits, and never in a `settings.json` `env` block, which an agent opens for unrelated edits.
 
 ---
 

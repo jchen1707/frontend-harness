@@ -8,6 +8,9 @@ The repository contract is independent of Claude Code, Codex, or another agent h
 | Skills              | `.agents/skills/*/SKILL.md`         | `.claude/skills/*/SKILL.md` pointer skills  |
 | Workflow state      | `.agents/plans/`                    | A harness may expose its own UI or commands |
 | Reviewer prompts    | `.claude/agents/*.md` prompt bodies | Claude frontmatter and workflow runner      |
+| Linear MCP          | Docker MCP Toolkit gateway          | `.mcp.json` and `.codex/config.toml`        |
+| Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`        |
+| Lifecycle hooks     | `.claude/hooks/*.mjs` scripts       | Claude settings and `.codex/hooks.json`     |
 | Deterministic gates | `package.json`, Husky, and CI       | Stop hooks are an extra Claude Code layer   |
 
 ## Capability discovery
@@ -19,6 +22,23 @@ installed because another harness has it.
 When Matt Pocock's skills plugin is present, its clarification, specification, ticketing,
 implementation, and review skills can implement the matching stages. When it is absent, use
 the repository delivery skill. The artifacts and quality gates stay the same.
+
+## MCP servers
+
+Each harness keeps its native MCP configuration file. Both configurations start Docker MCP
+Toolkit with `docker mcp gateway run`. Docker Desktop owns Linear authentication.
+
+Claude Code reads `.mcp.json`. Codex reads `.codex/config.toml` after the user trusts the
+project. Restart the active harness after either configuration changes.
+
+Both adapters start Chrome DevTools with an isolated profile. They redact network headers.
+They also disable usage statistics and CrUX requests.
+
+## Codex network access
+
+The trusted project config enables outbound network access in the workspace-write sandbox.
+This permits package downloads, browser installation, MCP startup, and documentation access.
+Codex still applies its filesystem sandbox and approval policy.
 
 ## Loops
 
@@ -37,3 +57,6 @@ the same prompts sequentially. Concurrency changes latency, not review semantics
 Claude Code hooks are convenience enforcement. They do not run in every harness. Git hooks,
 package scripts, tests, and CI are the portable enforcement layer. Every agent must run the
 verification skill before it reports completion.
+
+Codex runs the same path-protection, formatting, and Stop-gate scripts as Claude Code. Codex
+requires the user to review and trust project hooks with `/hooks` after a hook changes.

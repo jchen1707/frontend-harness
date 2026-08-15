@@ -60,9 +60,10 @@ export const GATED_PATHS = ['src', 'e2e', '.claude/hooks'];
  * outside them; a change breaks something without touching any application code.
  */
 export const GATED_FILES = new Set([
-  // Not a gate config, but Vitest tests it and a broken edit silently drops the Linear
-  // connection at the next session start, which looks like an outage rather than a bug.
-  '.claude/mcp-headers.mjs',
+  // These files configure external tools that Vitest checks.
+  '.codex/config.toml',
+  '.codex/hooks.json',
+  '.mcp.json',
   'package.json',
   'pnpm-lock.yaml',
   'tsconfig.json',

@@ -48,9 +48,9 @@ terminal window skips it — and it can fail after firing (`_hook.log` beside th
 every outcome). So when this retro surfaces a lesson that is clearly **transferable** and
 losing it would hurt, do not just "let the hook have it":
 
-1. Check `$CLAUDE_LEARNINGS_DIR` is set. If unset, say so; there is no vault to write.
+1. Check `$OBSIDIAN_VAULT_DIRECTORY` is set. If unset, say so; there is no vault to write.
 2. Ask the user whether to write the vault note now. If yes, write one Markdown file to
-   `$CLAUDE_LEARNINGS_DIR` in the hook's note format — frontmatter (`date`, `project`,
+   its `Project Learnings` directory in the hook's note format — frontmatter (`date`, `project`,
    `session`, `summary`, `tags: [project-learnings, session-retro]`), then
    `## Implementation learnings` and/or `## Architecture & design learnings`.
 3. Never touch `_VAULT_INDEX.md` or `_INDEX.md` — `python-harness` owns the indexes.

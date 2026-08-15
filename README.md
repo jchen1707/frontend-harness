@@ -87,10 +87,10 @@ pnpm exec playwright install chromium     # once, before the first pnpm test:e2e
 
 They are not alternatives, and picking the wrong one is the common mistake:
 
-|                    | Tool                                | Job                                                                                                   |
-| ------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`) | Agent-driven: build, iterate on design, debug, profile. Needs Chrome installed; no setup beyond that. |
-| **Regression net** | `@playwright/test` → `e2e/`         | Scripted specs with assertions, retries and CI. `pnpm test:e2e`.                                      |
+|                    | Tool                        | Job                                                                                                   |
+| ------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Fast loop**      | `chrome-devtools` MCP       | Agent-driven: build, iterate on design, debug, profile. Needs Chrome installed; no setup beyond that. |
+| **Regression net** | `@playwright/test` → `e2e/` | Scripted specs with assertions, retries and CI. `pnpm test:e2e`.                                      |
 
 Chrome DevTools MCP has **no runner, no assertions and no CI integration** — nothing it does
 can fail a build. It is for exploring and diagnosing, and it is fast at that: a text a11y
@@ -127,33 +127,16 @@ the two position gotchas that waste a call: `AGENTS.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 
-`.mcp.json` declares Linear as a remote server whose `Authorization` header comes from
-`.claude/mcp-headers.mjs`, which reads the OS credential store. Create a personal API key at
-**Linear → Settings → Security & access → Personal API keys**, in the workspace this repo
-should use, then store it once — in a real terminal, so the value never reaches an agent:
-
-```powershell
-$dir = Join-Path $env:USERPROFILE '.claude\mcp-credentials'
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-(Read-Host -AsSecureString 'Paste the Linear key') |
-  ConvertFrom-SecureString | Set-Content (Join-Path $dir 'linear-fro.cred')
-```
-
-Restart Claude Code, then check `/mcp`. **Set no environment variable.** The Bash tool
-inherits Claude Code's environment, so a `LINEAR_API_KEY` variable can be printed into a
-transcript by one careless command — and a key in a transcript has to be rotated. See
-`docs/secrets.md` for the full reasoning, the macOS and Linux equivalents, and rotation.
-
-A personal API key belongs to one workspace, which is the point: it binds this repo to that
-workspace, where the claude.ai account connector would bind your whole account and move every
-project at once. If you were using the connector, disconnect it once this works, or two
-Linear tool surfaces show up and neither says which workspace a write reached.
+Authenticate Linear in Docker Desktop MCP Toolkit. Enable Linear for the active profile.
+Select the **Development** workspace. Restart the active harness, then check `/mcp` for the
+Toolkit gateway and its Linear tools. Codex must trust the project before it reads
+`.codex/config.toml`.
 
 ### Second brain (optional)
 
-Set `CLAUDE_LEARNINGS_DIR` in your **user** settings — never in this repo's committed
-`.claude/settings.json`, or a clone inherits a path to your vault. With it set, the SessionEnd
-hook distils each session's hard-won lessons into a dated note.
+Set `OBSIDIAN_VAULT_DIRECTORY` in your **user** settings. Do not set it in this repo's
+committed `.claude/settings.json`. The SessionEnd hook writes dated notes to the vault's
+`Project Learnings` directory.
 
 **This harness writes notes; it does not index them.** `python-harness` owns
 `_VAULT_INDEX.md` and `Project Learnings/_INDEX.md` and rebuilds both when a session ends
