@@ -8,35 +8,37 @@ standards. It is the frontend sibling of [`python-harness`](https://github.com/j
 Target workload: React 19 SPA, REST and GraphQL clients, AI features served from a backend
 (Vite · TypeScript strict · Zod · TanStack Query · Apollo · Tailwind · Vitest · Playwright).
 
-The repo ships a minimal, runnable skeleton (a health route + its tests) so `/run` and
-`/verify` work out of the box.
+The repo ships a minimal, runnable skeleton (a health route + its tests) so development and
+verification work out of the box.
 
 ## What's here
 
-- `CLAUDE.md` — the source of truth: stack, workflow, Definition of Done, what the hooks
-  enforce, context/memory guidance. Loaded every Claude Code session.
+- `AGENTS.md` — the harness-neutral source of truth: stack, workflow, Definition of Done,
+  and context guidance. Codex and other compatible agents load it directly.
 - `docs/architecture.md` — **cross-cutting** standards only: the dependency rule, interfaces,
   data fetching, config, types, styling, accessibility, performance, testing, dependency
   policy (load with `/arch`).
 - `package.json` — tool config and the approved stack.
-- `.claude/` — shared Claude Code config: `settings.json` (pre-approved commands, hooks,
-  plugin), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`.
-- `.claude/settings.json` → `enabledPlugins` — declares the `mattpocock-skills` plugin, so a
-  clone picks it up automatically and it self-updates. `.claude/skills/` holds repo-owned
-  skills only.
+- `.agents/skills/` — canonical repo-owned skills, including a complete delivery fallback
+  that requires no external plugin.
+- `.claude/` — Claude Code adapters, optional plugins, hooks, agents, and its dynamic review
+  runner. These improve Claude Code use but do not define the repository contract.
+- `CLAUDE.md` and nested copies — thin pointers to the matching `AGENTS.md` files.
+- `docs/harness-compatibility.md` — capability mapping for skills, tools, agents, loops,
+  workflows, and plugins.
 - `docs/agents/` — how agents work with this repo: `issue-tracker.md` (Linear conventions),
   `triage-labels.md` (canonical triage roles → real label strings), `domain.md`.
 - `.out-of-scope/` — rejected feature requests, read by `/triage` to avoid re-litigating a
   decision that was already made.
 - `.github/workflows/ci.yml` — CI gates on Linux and Windows.
 - `.husky/pre-commit` + `lint-staged` — format and fix staged files at commit time.
-- `src/` — the skeleton. Each directory carries its own `CLAUDE.md` with the conventions that
+- `src/` — the skeleton. Each directory carries its own `AGENTS.md` with the conventions that
   govern it (see below).
 
 ## Layout — rules live next to the code
 
-Each directory owns its conventions. Read the file for the directory you are changing; Claude
-Code loads it automatically when working there.
+Each directory owns its conventions. Read the root file and every nested `AGENTS.md` that
+applies to the path you change.
 
 ```
 src/
@@ -65,9 +67,9 @@ cross-cutting — every slice may import them, they import nothing above. **This
 machine-enforced** by `eslint-plugin-boundaries`, so an illegal import fails `pnpm lint`.
 
 **These files are path-scoped.** Working in `src/core/` does not load
-`src/features/CLAUDE.md`. That is why anything spanning layers stays in
+`src/features/AGENTS.md`. That is why anything spanning layers stays in
 `docs/architecture.md` — a cross-layer rule in a leaf file stops being enforced exactly where
-it matters. Root `CLAUDE.md` indexes both, and carries a reference table mapping a task to the
+it matters. Root `AGENTS.md` indexes both, and carries a reference table mapping a task to the
 file to read before starting it.
 
 ## Setup
@@ -102,10 +104,10 @@ The committed config runs `--headless --isolated`, so the agent gets a throwaway
 profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
 and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
 
-### Symbol navigation (once per machine)
+### Symbol navigation (optional)
 
-Agents resolve TypeScript **symbols** — definitions, references, types — through Claude
-Code's built-in `LSP` tool instead of grepping for text. Two steps, both one-off:
+Use the harness's TypeScript LSP integration when it has one. Fall back to `rg` plus manual
+definition and import inspection when it does not. Claude Code setup is:
 
 ```sh
 npm install -g typescript-language-server
@@ -121,7 +123,7 @@ so the `claude plugin install` line above is not optional. Confirm with
 `LSP servers (1) typescript`.
 
 It runs out of process and costs **no tokens per session**. When to prefer it over grep, and
-the two position gotchas that waste a call: `CLAUDE.md` → Symbol navigation.
+the two position gotchas that waste a call: `AGENTS.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 
@@ -162,13 +164,13 @@ here do not appear in either index until you next end a session in `python-harne
 ## The SDLC
 
 How a request travels from landing in the tracker to meeting the Definition of Done.
-`CLAUDE.md` is the authority; this is the map.
+`AGENTS.md` is the authority. Skill and command names are adapters for these stages.
 
 ```
    Linear issue
         │
         ▼
-   /triage ─┬─▶ needs-triage ⇄ needs-info      evaluation loop, not terminal
+   triage ──┬─▶ needs-triage ⇄ needs-info      evaluation loop, not terminal
             │
             ├─▶ ready-for-human · wontfix      leaves the pipeline
             │
@@ -176,20 +178,20 @@ How a request travels from landing in the tracker to meeting the Definition of D
                      │
                      ▼
    ┌── ALIGNMENT — one unbroken context ──────────────┐
-   │  /grill-with-docs → /to-spec → /to-tickets       │
+   │  discover → clarify → specify → split             │
    └──────────────────────────────────────────────────┘
                      │ one ticket at a time
                      ▼
    ┌── EXECUTION — branch first, fresh context per ticket ─┐
-   │  /plan → sign-off → /implement-from-plan              │
-   │                       → /verify → /code-review        │
+   │  implement → verify → Standards + Spec review      │
    └───────────────────────────────────────────────────────┘
                      │
                      ▼
               PR → Definition of Done
 ```
 
-Small work skips alignment: `/plan` in one terminal, `/implement-from-plan` in another.
+Small work can start at clarify or implement. The delivery skill records state in
+`.agents/plans/`, so a new agent or harness can resume it.
 
 ## Commands
 
@@ -205,15 +207,13 @@ Small work skips alignment: `/plan` in one terminal, `/implement-from-plan` in a
 | `pnpm test:e2e`                     | Playwright E2E (boots the dev server)    |
 | `pnpm lhci`                         | Lighthouse CI against built `dist/`      |
 
-Slash commands come from three places, and the session's skill listing shows all of them:
+The canonical skills live in `.agents/skills/`. Start with `delivery` for end-to-end work,
+`verify` for gates, and `loop-goal` for standing work. A harness can expose these as skills,
+commands, or direct instructions. Claude Code adapters live in `.claude/`.
 
-- **`.claude/commands/`** — repo-owned: `/plan`, `/implement-from-plan`, `/arch`, `/lint`,
-  `/test`, `/run`, `/context`, `/retro`.
-- **`.claude/skills/`** — repo-owned skills: `/verify`, `/loop-goal`, `/prune-rules`,
-  `/search-second-brain`.
-- **`mattpocock-skills` plugin** — `/triage`, `/grill-with-docs`, `/to-spec`, `/to-tickets`,
-  `/implement`, `/tdd`, `/code-review`, `/wayfinder` and the rest. Declared in
-  `.claude/settings.json`; never vendored into the repo.
+Matt Pocock's skills plugin remains enabled for Claude Code and may implement matching
+delivery stages. Codex and other harnesses use the repository fallback when that plugin is
+not available. Both paths produce the same plans, tests, review evidence, and PR shape.
 
 ## What runs without being asked
 
@@ -224,8 +224,8 @@ Slash commands come from three places, and the session's skill listing shows all
 | `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                          |
 | `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain (notes only — `python-harness` owns the indexes) |
 
-The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it for a
-session.
+Claude Code's Stop gate makes its sessions walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables
+that adapter for a session. Other harnesses rely on the verify skill, Git hooks, and CI.
 
 ## Conventions
 
@@ -237,7 +237,7 @@ session.
 - **Strict types** — `any` is an ESLint error; exported functions carry explicit types.
 - **Offline tests** — MSW intercepts every request with `onUnhandledRequest: 'error'`.
 - **The approved stack is fixed in `package.json`** — adding a different framework requires
-  updating [CLAUDE.md](CLAUDE.md) + [docs/architecture.md](docs/architecture.md) first.
+  updating [AGENTS.md](AGENTS.md) + [docs/architecture.md](docs/architecture.md) first.
 
 See [`docs/architecture.md`](docs/architecture.md) for the full standards (data fetching,
 SSR/SSG/SEO, performance, testing, design-pattern selection).

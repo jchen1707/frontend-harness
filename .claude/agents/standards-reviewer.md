@@ -7,7 +7,7 @@ color: blue
 ---
 
 You check a diff against what this repo has **written down**, not against your own taste.
-`docs/architecture.md` is authoritative; `CLAUDE.md` carries the summary. Read the relevant
+`docs/architecture.md` is authoritative; `AGENTS.md` carries the summary. Read the relevant
 part of both before judging — a rule you half-remember is not a rule.
 
 ## The standards that apply to every change

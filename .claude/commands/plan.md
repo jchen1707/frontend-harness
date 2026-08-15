@@ -35,7 +35,7 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
 4. **Design approach** — decide:
    - **Which feature slice** this belongs in — an existing `src/features/<name>/`, or a new
      one. A new slice needs its `ui/`, `services/`, `repositories/` and `index.ts` named up
-     front. Read `src/features/CLAUDE.md`.
+     front. Read `src/features/AGENTS.md`.
    - **The layer placement** of each piece, and the repository interface(s) plus the fake the
      tests will use.
    - **The data-fetching choice** — REST via TanStack Query or GraphQL via Apollo — and the
@@ -53,7 +53,7 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
      work with no visual surface.
    - Rendering, routing, SEO and performance implications; accessibility for any new
      interaction; risks; the verification steps.
-5. **Write the implementation plan** — overwrite `.claude/plans/plan.md` with:
+5. **Write the implementation plan** — overwrite `.agents/plans/plan.md` with:
    - **Status** — one line at the top: what state the plan is in (`awaiting sign-off`,
      `approved`, `implementing`, `implemented`, `review clean`). **Update it in the same
      turn the state changes** — a stale "running" line misleads the session that resumes
@@ -71,11 +71,11 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
    - **Steps** — numbered, concrete, ordered implementation tasks; each names its file(s) and
      layer and is small enough to verify independently. Terminal 2 turns this list into its
      task list.
-   - **Verification** — the gates to pass (CLAUDE.md Definition of Done: `pnpm lint`,
+   - **Verification** — the gates to pass (AGENTS.md Definition of Done: `pnpm lint`,
      `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`; `pnpm test:e2e` when
      UI behaviour changed; `pnpm lhci` when performance is in scope), then `/code-review`.
    - **Open questions** — anything terminal 2 should confirm before/while implementing.
-6. **Write the test plan** — overwrite `.claude/plans/test-plan.md` with:
+6. **Write the test plan** — overwrite `.agents/plans/test-plan.md` with:
    - **Scope** — the behaviours that must be covered (tie each back to a plan Step).
    - **Unit & component tests (offline)** — the cases per layer (repository / service / ui),
      the MSW handlers they need, and the fakes to use. No network — these are the default
@@ -91,7 +91,7 @@ The argument is the feature/task to plan: `$ARGUMENTS`.
    verification.
 8. **STOP — do not implement.** After sign-off, mark the planning tasks complete and stop.
    Tell the user to open terminal 2 (implementation model) and run `/implement-from-plan`,
-   which feeds `.claude/plans/plan.md` + `test-plan.md` to the `/implement` skill as its spec
+   which feeds `.agents/plans/plan.md` + `test-plan.md` to the `/implement` skill as its spec
    (that skill won't find them on its own).
 
 `plan.md` and `test-plan.md` are gitignored — local handoff artifacts, not committed. Plan
@@ -99,4 +99,4 @@ mode's own auto-saved file uses a random slug name and isn't a reliable handoff,
 command writes the stable `plan.md` / `test-plan.md` instead.
 
 > If any task in this session would feed an image into the model (screenshot, mockup,
-> diagram), stop and ask the user for permission first (see CLAUDE.md Guardrails).
+> diagram), stop and ask the user for permission first (see AGENTS.md Guardrails).

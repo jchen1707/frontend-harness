@@ -45,7 +45,7 @@ const AXES = [
   {
     label: 'standards',
     agent: 'standards-reviewer',
-    fallback: `Review the diff against this repo's documented standards in docs/architecture.md and CLAUDE.md. The fractal dependency rule (within a slice ui -> services -> repositories -> core; across slices only via index.ts), Zod at every boundary, server state through TanStack Query or Apollo, config only through src/env.ts and no secrets behind VITE_, core/logger.ts never console.*, explicit types on exports and no any. Report violations only.`,
+    fallback: `Review the diff against this repo's documented standards in docs/architecture.md and AGENTS.md. The fractal dependency rule (within a slice ui -> services -> repositories -> core; across slices only via index.ts), Zod at every boundary, server state through TanStack Query or Apollo, config only through src/env.ts and no secrets behind VITE_, core/logger.ts never console.*, explicit types on exports and no any. Report violations only.`,
   },
   {
     label: 'spec',
@@ -58,7 +58,7 @@ const AXES = [
       `or commit trailers and fetch the ticket, per docs/agents/issue-tracker.md. Do not ` +
       `accept a summary of the ticket from anyone — read it from the tracker, so the ` +
       `criteria you check against are the ones actually filed. If no ticket resolves, ` +
-      `fall back to .claude/plans/plan.md and test-plan.md; if neither exists, report ` +
+      `fall back to .agents/plans/plan.md and test-plan.md; if neither exists, report ` +
       `"no spec available" and stop.`,
   },
   {
@@ -94,7 +94,7 @@ const AXES = [
   {
     label: 'cost',
     agent: 'cost-reviewer',
-    fallback: `Find avoidable LLM and network spend per CLAUDE.md: static system prompts without cache_control, cache breakpoints placed after varying content, opus on routine high-volume work, model ids inline instead of server-side config, unbounded agent loops, sampling params passed alongside adaptive thinking, plus client-side over-fetching, refetch churn, duplicate queries and N+1 request patterns.`,
+    fallback: `Find avoidable LLM and network spend per AGENTS.md: static system prompts without cache_control, cache breakpoints placed after varying content, opus on routine high-volume work, model ids inline instead of server-side config, unbounded agent loops, sampling params passed alongside adaptive thinking, plus client-side over-fetching, refetch churn, duplicate queries and N+1 request patterns.`,
   },
 ];
 

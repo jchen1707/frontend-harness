@@ -1,6 +1,8 @@
 # Architecture & Standards
 
-Detailed standards for this harness. Load on demand via `/arch`. CLAUDE.md is the always-loaded summary; this file is the reference. Changing the approved stack or a standard means editing this file (and CLAUDE.md) first.
+Detailed standards for this harness. Read it before architectural work. `AGENTS.md` is the
+always-loaded summary; this file is the reference. Changing the approved stack or a standard
+means editing this file and `AGENTS.md` first.
 
 ---
 
@@ -8,7 +10,7 @@ Detailed standards for this harness. Load on demand via `/arch`. CLAUDE.md is th
 
 **The unit of organization is the feature, not the layer.** Each feature owns its slice top-to-bottom under `src/features/<name>/` — its UI, its services (hooks), its repositories + schemas, and any feature-local types. The one-directional dependency rule (§1) holds _within_ the slice. The payoff: changes stay vertical (a typical edit touches one folder from route down to data access, not four global layer directories), and deleting a feature is deleting a folder, not archaeology across the tree.
 
-Pick the **structural style of the feature** deliberately during `/plan`, and document the choice:
+Pick the **structural style of the feature** deliberately during planning, and document the choice:
 
 - **Default: layered slice** — inside the feature, UI/routes → services (hooks) → repositories → core. Good for most features.
 - **Flux / unidirectional** — for complex shared client state, a store (reducer/`useReducer` or a state library) with one-way data flow.
@@ -25,7 +27,7 @@ Then choose the **React / GoF design pattern(s)** for the feature and justify th
 - **Factory / Strategy** — for selecting repository implementations at composition time.
 - **Adapter** — to wrap third-party API clients behind our repository interfaces.
 
-The agent must state the chosen pattern and _why_ during `/plan`.
+The agent must state the chosen pattern and _why_ during planning.
 
 ---
 
@@ -51,7 +53,7 @@ The rule has two clauses:
 
 **This is machine-enforced** by `eslint-plugin-boundaries` (config in `eslint.config.js`). Illegal reverse, lateral, or cross-feature-internal imports fail `pnpm lint` — the rule an agent or new dev relies on is a guardrail, not a convention. The same statement applies at every scale, which is why a feature is locatable by name and an agent can trust that everything relevant is colocated.
 
-**Keeping `core`/`components` honest (the one judgment call).** They are for genuinely cross-cutting primitives only — not a junk drawer. When two features keep reaching for the same thing, promote it to `core` **deliberately** rather than by accident, and don't let shared code swell into a second app. "What counts as a feature" is decided during `/plan`; the failure mode to avoid is a junk-drawer feature.
+**Keeping `core`/`components` honest (the one judgment call).** They are for genuinely cross-cutting primitives only — not a junk drawer. When two features keep reaching for the same thing, promote it to `core` **deliberately** rather than by accident, and don't let shared code swell into a second app. "What counts as a feature" is decided during planning; the failure mode to avoid is a junk-drawer feature.
 
 ---
 
@@ -109,11 +111,11 @@ Separate **server state** (TanStack Query / Apollo cache — fetched, cached, in
 
 ## §7 SSR / SSG / SEO
 
-Default is a **Vite SPA (CSR)**. When first-paint or SEO matters, choose during `/plan` (and update CLAUDE.md + this file before adopting):
+Default is a **Vite SPA (CSR)**. When first-paint or SEO matters, choose during planning (and update AGENTS.md + this file before adopting):
 
 1. **Pre-render / SSG** — static HTML per route via `vite-plugin-ssr`/`vike` or a prerender step. Best when content is mostly static.
 2. **SSR** — a Node server entry rendering React to a stream. Best for dynamic, crawlable, fast-first-paint pages.
-3. **Migrate to a meta-framework** (Next.js) — when SSR/routing/data needs outgrow the SPA. This is a stack change → requires updating CLAUDE.md + this file.
+3. **Migrate to a meta-framework** (Next.js) — when SSR/routing/data needs outgrow the SPA. This is a stack change → requires updating AGENTS.md + this file.
 
 **SEO baseline regardless of rendering:**
 
@@ -172,14 +174,17 @@ Baseline: route-level code-splitting (`React.lazy` + `Suspense`), measured memoi
 
 - **Offline unit/component tests (default).** Vitest + Testing Library + jsdom, with **MSW** intercepting all network (`onUnhandledRequest: 'error'` — unmocked requests fail). Inject `Fake*` repositories for pure logic; use MSW to exercise the HTTP/validation path. No real network, ever. Worked example: `src/features/health/services/useHealth.test.tsx`. Colocate as `*.test.ts(x)` next to the unit.
 - **E2E (Playwright).** Scripted specs in `e2e/` run against the real dev server (`playwright.config.ts` boots `pnpm dev`) — the frontend analog of testcontainers integration tests. Run with `pnpm test:e2e`. Worked example: `e2e/smoke.spec.ts`.
-- **Agent-driven Chrome DevTools MCP.** For interactive verification, design iteration and profiling during `/run`/`/verify`. It is not a test framework — no runner, no assertions, no CI — so it explores and diagnoses, and the outcome gets promoted into an `e2e/` spec. Prefer `take_snapshot` (text a11y tree); **screenshots and screencasts are image inputs and require explicit user consent** (see CLAUDE.md Guardrails).
+- **Agent-driven browser tools.** Use them for interactive verification, design iteration,
+  and profiling. They are not a test framework, so promote settled behavior into an `e2e/`
+  spec. Prefer a text accessibility snapshot. Screenshots and screencasts are image inputs
+  and require explicit user consent (see `AGENTS.md` Guardrails).
 - Don't edit a test to make it pass — diagnose the root cause.
 
 ---
 
 ## §14 Dependency policy
 
-The approved stack is fixed in `package.json`. Adding a new framework/library requires updating CLAUDE.md + this file **first**, with a short rationale. Prefer editing `package.json` then `pnpm install` over ad-hoc `pnpm add`. Keep `pnpm-lock.yaml` committed; CI installs with `--frozen-lockfile`.
+The approved stack is fixed in `package.json`. Adding a new framework/library requires updating AGENTS.md + this file **first**, with a short rationale. Prefer editing `package.json` then `pnpm install` over ad-hoc `pnpm add`. Keep `pnpm-lock.yaml` committed; CI installs with `--frozen-lockfile`.
 
 > **No `docker-compose.yml`:** a pure frontend has no database. The "real-environment / integration" analog here is Playwright E2E against the dev server. If a project later needs a mock backend or DB, add it then and document it here.
 

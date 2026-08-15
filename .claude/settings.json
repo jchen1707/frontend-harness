@@ -42,7 +42,7 @@
     "typescript-lsp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true
   },
-  "plansDirectory": ".claude/plans",
+  "plansDirectory": ".agents/plans",
   "enabledMcpjsonServers": ["chrome-devtools", "linear"],
   "hooks": {
     "PreToolUse": [

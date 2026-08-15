@@ -17,12 +17,12 @@ before anyone looks at a bill.
 - **Cache breakpoints after varying content.** A breakpoint placed below anything that changes
   per request caches nothing — the prefix no longer matches.
 - **The wrong model for the job.** `claude-opus-4-8` on routine, high-volume work that
-  `claude-sonnet-4-6` handles. `CLAUDE.md` names the default and when to downgrade.
+  `claude-sonnet-4-6` handles. `AGENTS.md` names the default and when to downgrade.
 - **Model ids inline** instead of read once from server-side config, so nobody can change the
   model without a deploy.
 - **Unbounded agent loops** — no iteration cap, no token budget, no stop condition.
 - **Sampling parameters passed alongside adaptive thinking** — `temperature`, `top_p`,
-  `top_k`. `CLAUDE.md` forbids them; passing them is both wrong and wasteful.
+  `top_k`. `AGENTS.md` forbids them; passing them is both wrong and wasteful.
 - **Sending more context than the task needs** — a whole file where a function would do, a
   full transcript where the tail would do.
 - **Any Anthropic call reachable from browser code.** That is a security finding first (the

@@ -148,11 +148,11 @@ Used by `/wayfinder`. The **map** is one issue; **tickets** are its children.
 ## Repo-specific notes
 
 - The **Standards** axis of `/code-review` reads `docs/architecture.md` (authoritative), the
-  summary in `CLAUDE.md`, and the nested `CLAUDE.md` for whichever directory the diff touches.
+  summary in `AGENTS.md`, and the nested `AGENTS.md` for whichever directory the diff touches.
   Those override the skill's generic smell baseline.
 - The **Spec** axis resolves the originating ticket from the Linear id in the branch name or
   commit trailer. Name branches `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`)
-  so the link is mechanical. When there is no ticket, it falls back to `.claude/plans/plan.md`.
-- Definition of Done lives in `CLAUDE.md`; `/verify` runs those gates and prints evidence.
+  so the link is mechanical. When there is no ticket, it falls back to `.agents/plans/plan.md`.
+- Definition of Done lives in `AGENTS.md`; the `verify` skill runs those gates and prints evidence.
 - Nine axes instead of two: `.claude/workflows/full-review.js`, run with `/workflows`. That is
   real spend — reach for it when the diff warrants it, not by default.
