@@ -18,7 +18,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
@@ -42,6 +42,79 @@ import {
   isGated,
   porcelainPath,
 } from './verify.mjs';
+
+const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+function frontmatter(source) {
+  const block = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
+  return Object.fromEntries(
+    block.split(/\r?\n/).map((line) => {
+      const separator = line.indexOf(':');
+      return [line.slice(0, separator), line.slice(separator + 1).trim()];
+    }),
+  );
+}
+
+describe('harness-neutral compatibility adapters', () => {
+  const skillRoot = join(repositoryRoot, '.agents', 'skills');
+  const claudeSkillRoot = join(repositoryRoot, '.claude', 'skills');
+
+  it('maps every canonical skill to a Claude adapter with matching discovery metadata', () => {
+    const skillNames = readdirSync(skillRoot).filter((name) =>
+      existsSync(join(skillRoot, name, 'SKILL.md')),
+    );
+
+    for (const name of skillNames) {
+      const canonicalPath = join(skillRoot, name, 'SKILL.md');
+      const adapterPath = join(claudeSkillRoot, name, 'SKILL.md');
+      expect(existsSync(adapterPath), `missing Claude adapter for ${name}`).toBe(true);
+
+      const canonical = readFileSync(canonicalPath, 'utf8');
+      const adapter = readFileSync(adapterPath, 'utf8');
+      expect(frontmatter(adapter)).toEqual(frontmatter(canonical));
+
+      const target = adapter.match(/Read and execute `([^`]+)`/)?.[1];
+      expect(target, `missing canonical pointer for ${name}`).toBeTruthy();
+      expect(resolve(dirname(adapterPath), target)).toBe(canonicalPath);
+    }
+  });
+
+  it('points every Claude instruction file at its applicable AGENTS files', () => {
+    const adapters = [
+      ['CLAUDE.md', ['AGENTS.md']],
+      ['src/components/CLAUDE.md', ['src/components/AGENTS.md', 'AGENTS.md']],
+      ['src/core/CLAUDE.md', ['src/core/AGENTS.md', 'AGENTS.md']],
+      ['src/features/CLAUDE.md', ['src/features/AGENTS.md', 'AGENTS.md']],
+      ['src/test/CLAUDE.md', ['src/test/AGENTS.md', 'AGENTS.md']],
+      ['e2e/CLAUDE.md', ['e2e/AGENTS.md', 'AGENTS.md']],
+    ];
+
+    for (const [adapter, expected] of adapters) {
+      const adapterPath = join(repositoryRoot, adapter);
+      const links = [...readFileSync(adapterPath, 'utf8').matchAll(/\[[^\]]+\]\(([^)]+)\)/g)].map(
+        (match) => resolve(dirname(adapterPath), match[1]),
+      );
+      expect(links).toEqual(expected.map((path) => join(repositoryRoot, path)));
+    }
+  });
+
+  it('keeps every planning adapter on the portable plans directory', () => {
+    const settings = JSON.parse(
+      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
+    );
+    expect(settings.plansDirectory).toBe('.agents/plans');
+    expect(readFileSync(join(repositoryRoot, '.gitignore'), 'utf8')).toContain('.agents/plans/');
+
+    for (const path of [
+      '.claude/commands/plan.md',
+      '.claude/commands/implement-from-plan.md',
+      '.claude/agents/spec-checker.md',
+      '.claude/workflows/full-review.js',
+    ]) {
+      expect(readFileSync(join(repositoryRoot, path), 'utf8')).not.toContain('.claude/plans');
+    }
+  });
+});
 
 describe('Stop-gate pathspec', () => {
   it('covers the application, its specs and the hooks that enforce the gates', () => {

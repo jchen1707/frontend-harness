@@ -1,6 +1,6 @@
 ---
-description: Hand .claude/plans/plan.md + test-plan.md to the /implement skill as its spec, with this repo's pnpm gates pinned (terminal 2, implementation model)
-argument-hint: '[path to a plan file, or blank for .claude/plans/plan.md]'
+description: Hand .agents/plans/plan.md + test-plan.md to the /implement skill as its spec, with this repo's pnpm gates pinned (terminal 2, implementation model)
+argument-hint: '[path to a plan file, or blank for .agents/plans/plan.md]'
 ---
 
 Two-terminal workflow — **terminal 2 (implementation model)**. This is a thin adapter over
@@ -8,7 +8,7 @@ the `mattpocock-skills` `/implement` skill: that skill implements "a spec or set
 but does **not** know about this repo's plan files, its feature-slice layering, or its gates.
 This command supplies all three.
 
-1. **Locate the plans.** Default to `.claude/plans/plan.md` and `.claude/plans/test-plan.md`;
+1. **Locate the plans.** Default to `.agents/plans/plan.md` and `.agents/plans/test-plan.md`;
    if `$ARGUMENTS` names a path, use that as the implementation plan and look for a sibling
    `test-plan.md`.
    - If `plan.md` is missing, **STOP** and tell the user to run `/plan` in terminal 1 first.
@@ -20,9 +20,9 @@ This command supplies all three.
    ask — don't quietly substitute your own approach.
 3. **Confirm the branch.** `/plan` creates the feature branch off the user's chosen base. Run
    `git branch --show-current`; if you're on `main`, stop and ask which branch to use — per
-   CLAUDE.md, direct commits to `main` need an explicit user request.
+   AGENTS.md, direct commits to `main` need an explicit user request.
 4. **Invoke `/implement` with the plans as the spec.** Say explicitly that the spec is
-   `.claude/plans/plan.md` plus `.claude/plans/test-plan.md`, and pass along:
+   `.agents/plans/plan.md` plus `.agents/plans/test-plan.md`, and pass along:
    - the numbered **Steps** from `plan.md` as the task list (build it with `TaskCreate`, one
      task per Step, marking each in_progress/complete as you go);
    - the **test cases** from `test-plan.md` as the cases to drive `/tdd` with, and the
@@ -37,10 +37,10 @@ This command supplies all three.
 5. **Pin the layering — code lands in a slice, not in a folder of its kind.** New code goes in
    `src/features/<slice>/` under the right layer (`ui/` → `services/` → `repositories/` →
    `core`). Cross-feature reuse goes through the other slice's `index.ts`, or gets promoted to
-   `src/core` or `src/components/ui` deliberately. Read `src/features/CLAUDE.md` before the
+   `src/core` or `src/components/ui` deliberately. Read `src/features/AGENTS.md` before the
    first edit.
 6. **Pin the gates.** The plugin skills say "run typechecking" and "run the test suite"
-   generically. Wherever a skill says that, substitute the commands from **CLAUDE.md → Quick
+   generically. Wherever a skill says that, substitute the commands from **AGENTS.md → Quick
    commands**: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm build`,
    and `pnpm test:e2e` when UI behaviour changed. For a single file,
    `pnpm exec vitest run <path>`. `pnpm build` is a gate: only the build checks the browser
@@ -50,8 +50,8 @@ This command supplies all three.
    needed) → `list_console_messages`. Re-running `pnpm test:e2e` to check "did my change
    render?" is the slow path and asserts nothing new. Playwright is the regression net:
    when a behaviour settles, write the **minimal** spec into `e2e/` once, run the suite once
-   to prove it, and move on (CLAUDE.md → Browser work: explore → promote).
-8. **Finish to the Definition of Done** (CLAUDE.md). Run `/verify` for the evidence — paste
+   to prove it, and move on (AGENTS.md → Browser work: explore → promote).
+8. **Finish to the Definition of Done** (AGENTS.md). Run `/verify` for the evidence — paste
    the real output rather than asserting the gates passed. Then `/code-review` with the
    merge-base as the fixed point (`git merge-base HEAD main`) and no Standards findings
    outstanding. The `Stop` hook re-runs the gates independently, so a turn cannot end on
@@ -68,6 +68,7 @@ This command supplies all three.
 10. **Commit, and open the PR only when asked.** `/implement` commits to the current branch.
     Opening the PR is a separate, explicit step — run `gh pr create` only if the user asks.
     When you do open one:
+
     - Run `/preflight` first. It checks the process gates the code gates cannot see — body,
       tracker, test coverage of the diff, plan status — and produces the Evidence scorecard.
     - The body follows `.github/PULL_REQUEST_TEMPLATE.md`. **Never open a PR with an empty
@@ -78,5 +79,5 @@ This command supplies all three.
 
     Report what landed, what's left, and anything the plan got wrong.
 
-> Do not feed any image into the model without explicit user permission (CLAUDE.md
+> Do not feed any image into the model without explicit user permission (AGENTS.md
 > Guardrails). Verify with the Chrome DevTools MCP `take_snapshot` (text a11y tree) instead.

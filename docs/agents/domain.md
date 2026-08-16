@@ -10,11 +10,11 @@ codebase.
   patterns chosen per feature slice, and the rest is the authoritative standards reference
   (`/arch` loads it). Read it before proposing structural change; treat its recorded choices
   exactly as you would an ADR.
-- **`CLAUDE.md`** — the always-loaded summary: approved stack, the dependency rule, Definition
-  of Done. Where it and a skill's generic advice disagree, `CLAUDE.md` wins.
-- **The nested `CLAUDE.md` for the directory you are changing** — `src/core/`,
+- **`AGENTS.md`** — the always-loaded summary: approved stack, the dependency rule, Definition
+  of Done. Where it and a skill's generic advice disagree, `AGENTS.md` wins.
+- **The nested `AGENTS.md` for the directory you are changing** — `src/core/`,
   `src/components/`, `src/features/`, `e2e/`. These are path-scoped: working in `src/core/`
-  does not load `src/features/CLAUDE.md`.
+  does not load `src/features/AGENTS.md`.
 - **`CONTEXT.md`** at the repo root — the domain glossary, if it exists.
 - **`docs/adr/`** — individual ADRs, if any exist. This repo has none yet: architectural
   decisions have been recorded in `docs/architecture.md` instead. A per-decision file under
@@ -32,7 +32,7 @@ Single-context repo (this repo):
 
 ```
 /
-├── CLAUDE.md                  ← standards summary, always loaded
+├── AGENTS.md                  ← standards summary, always loaded
 ├── CONTEXT.md                 ← domain glossary (not yet created)
 ├── docs/
 │   ├── architecture.md        ← standards + the architectural decision record
@@ -77,4 +77,4 @@ If your output contradicts a decision recorded in `docs/architecture.md` (or an 
 
 The fractal dependency rule (`ui` → `services` → `repositories` → `core` within a slice,
 cross-slice only through `index.ts`) and the approved stack are the two most likely to be
-contradicted by generic advice. Neither changes without a `CLAUDE.md` edit first.
+contradicted by generic advice. Neither changes without an `AGENTS.md` edit first.

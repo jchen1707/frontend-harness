@@ -1,4 +1,4 @@
-<!-- A PR with an empty body is not done (CLAUDE.md, Definition of Done). Fill every
+<!-- A PR with an empty body is not done (AGENTS.md, Definition of Done). Fill every
 section. Write in Simplified Technical English. -->
 
 ## Summary
@@ -30,7 +30,7 @@ Name any gate that did not run, with the reason. -->
 ## Screenshots or snapshot
 
 <!-- Required for user-visible changes. A screenshot needs the user's image-input consent
-(CLAUDE.md, Guardrails); a text a11y-tree snapshot from `take_snapshot` is the accepted
+(AGENTS.md, Guardrails); a text a11y-tree snapshot from `take_snapshot` is the accepted
 no-consent alternative — paste the relevant landmarks and roles. If neither is present,
 say why. -->
 

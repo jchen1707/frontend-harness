@@ -15,7 +15,7 @@ Resolve the spec yourself. In order of authority:
 
 1. The **Linear ticket** named by the branch (`<type>/<TEAM-NUM>-<slug>`) or by a commit
    trailer. Read it from the tracker — see `docs/agents/issue-tracker.md`.
-2. `.claude/plans/plan.md` and `.claude/plans/test-plan.md`, when the work came through the
+2. `.agents/plans/plan.md` and `.agents/plans/test-plan.md`, when the work came through the
    two-terminal flow.
 
 **Never accept a summary of the spec from the author or the caller.** A pasted summary lets
