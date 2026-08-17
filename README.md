@@ -189,6 +189,27 @@ How a request travels from landing in the tracker to meeting the Definition of D
               PR → Definition of Done
 ```
 
+### Where the Matt Pocock skills fit
+
+These skills add optional steps to the main path. Do not run all three for every ticket.
+
+| Skill | Place it | Use it when |
+| --- | --- | --- |
+| `/improve-codebase-architecture` | During alignment, after `/grill-with-docs` and before `/to-spec` | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
+| `/codebase-design` | During alignment, after you choose a candidate and before `/to-spec` confirms the seams | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it. |
+| `/tdd` | During execution, inside `/implement`, after `/to-spec` or `/plan` confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review. |
+
+For architecture work, use this order:
+
+```
+/grill-with-docs → /improve-codebase-architecture → /codebase-design
+→ /to-spec → /to-tickets → /implement → /tdd → /verify → /code-review
+```
+
+Skip the two architecture skills when the design is already clear. For the small-work path,
+run `/tdd` inside `/implement-from-plan` after plan sign-off. Skip `/tdd` for documentation-only
+or configuration-only changes.
+
 Small work skips alignment: `/plan` in one terminal, `/implement-from-plan` in another.
 
 ## Commands
