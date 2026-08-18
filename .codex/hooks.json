@@ -41,6 +41,19 @@
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.claude/hooks/codex_session_learnings.mjs\"",
+            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.claude/hooks/codex_session_learnings.mjs')\"",
+            "timeout": 3,
+            "statusMessage": "Distilling session learnings"
+          }
+        ]
+      }
     ]
   }
 }

@@ -118,10 +118,33 @@ describe('harness-neutral compatibility adapters', () => {
 
   it('configures Codex enforcement hooks through the shared scripts', () => {
     const config = JSON.parse(readFileSync(join(repositoryRoot, '.codex', 'hooks.json'), 'utf8'));
-    expect(Object.keys(config.hooks)).toEqual(['PreToolUse', 'PostToolUse', 'Stop']);
+    expect(Object.keys(config.hooks)).toEqual(['PreToolUse', 'PostToolUse', 'Stop', 'SessionEnd']);
     expect(JSON.stringify(config)).toContain('.claude/hooks/protect_paths.mjs');
     expect(JSON.stringify(config)).toContain('.claude/hooks/format_edited.mjs');
     expect(JSON.stringify(config)).toContain('.claude/hooks/verify.mjs');
+    expect(JSON.stringify(config)).toContain('.claude/hooks/codex_session_learnings.mjs');
+  });
+
+  // A harness-neutral repo that wires a lifecycle event for one harness and not the other
+  // is agnostic in its documentation only. SessionEnd was missing here while the Claude
+  // side had it, so Codex sessions distilled nothing and said nothing about it.
+  it('gives Codex every lifecycle event the Claude harness has', () => {
+    const codex = JSON.parse(readFileSync(join(repositoryRoot, '.codex', 'hooks.json'), 'utf8'));
+    const claude = JSON.parse(
+      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
+    );
+    expect(Object.keys(codex.hooks).sort()).toEqual(Object.keys(claude.hooks).sort());
+  });
+
+  // Codex kills a SessionEnd hook after three seconds. The distiller shells out to a
+  // headless `claude -p` and takes minutes, so the Codex stanza must run the detaching
+  // adapter rather than the distiller itself, and must declare that budget.
+  it('detaches the Codex session distillation from the three-second budget', () => {
+    const config = JSON.parse(readFileSync(join(repositoryRoot, '.codex', 'hooks.json'), 'utf8'));
+    const [hook] = config.hooks.SessionEnd[0].hooks;
+    expect(hook.command).toContain('codex_session_learnings.mjs');
+    expect(hook.command).not.toContain('/session_learnings.mjs');
+    expect(hook.timeout).toBe(3);
   });
 });
 
@@ -301,6 +324,16 @@ describe('mcp configuration', () => {
     expect(config).toContain('[mcp_servers.docker_toolkit]');
     expect(config).toContain('args = ["mcp", "gateway", "run"]');
     expect(config).not.toContain('LINEAR_API_KEY');
+  });
+
+  // The server was renamed in `.mcp.json` while `enabledMcpjsonServers` still named the
+  // old one, so the gateway was configured and never enabled. Neither file is wrong on
+  // its own; only the pair is.
+  it('enables exactly the servers it defines', () => {
+    const settings = JSON.parse(
+      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
+    );
+    expect([...settings.enabledMcpjsonServers].sort()).toEqual(Object.keys(mcp.mcpServers).sort());
   });
 
   it('gives Codex the hardened Chrome DevTools server', () => {
