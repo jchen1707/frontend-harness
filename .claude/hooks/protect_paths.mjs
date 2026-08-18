@@ -32,7 +32,7 @@ import { resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { readPayload, relativePath } from './lib.mjs';
+import { readPayload, relativePath, toolPaths } from './lib.mjs';
 
 /** Refuse writes. Reading the file costs nothing, so reading stays allowed. */
 const WRITE = 'write';
@@ -106,25 +106,25 @@ export function blockReason(path, toolName) {
 
 async function main() {
   const payload = await readPayload();
-  const raw = payload?.tool_input?.file_path;
-  if (!raw) return 0;
-
   const toolName = payload.tool_name ?? '';
-  const path = relativePath(raw, payload.cwd ?? '');
-  const why = blockReason(path, toolName);
-  if (!why) return 0;
+  for (const raw of toolPaths(payload)) {
+    const path = relativePath(raw, payload.cwd ?? '');
+    const why = blockReason(path, toolName);
+    if (!why) continue;
 
-  // ASCII only: hook stderr is decoded by the harness, and a Windows console
-  // codepage can mangle non-ASCII on the way out.
-  const [verb, advice] = READ_TOOLS.has(toolName)
-    ? [
-        'read',
-        'A value read here enters the transcript, and only rotation undoes that.\n' +
-          'Refer to the variable by name, or ask the user to check it.\n',
-      ]
-    : ['edit', 'Ask the user to make this change, or explain why it is required.\n'];
-  process.stderr.write(`Refusing to ${verb} ${path} - ${why}.\n${advice}`);
-  return 2;
+    // ASCII only: hook stderr is decoded by the harness, and a Windows console
+    // codepage can mangle non-ASCII on the way out.
+    const [verb, advice] = READ_TOOLS.has(toolName)
+      ? [
+          'read',
+          'A value read here enters the transcript, and only rotation undoes that.\n' +
+            'Refer to the variable by name, or ask the user to check it.\n',
+        ]
+      : ['edit', 'Ask the user to make this change, or explain why it is required.\n'];
+    process.stderr.write(`Refusing to ${verb} ${path} - ${why}.\n${advice}`);
+    return 2;
+  }
+  return 0;
 }
 
 // Run only when invoked as a hook, never on import — the test suite imports this module

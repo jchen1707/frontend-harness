@@ -88,6 +88,20 @@ export function relativePath(raw, projectDir) {
   return parts.join('/');
 }
 
+/** Return every file path named by a file tool or unified patch call. */
+export function toolPaths(payload) {
+  const direct = payload?.tool_input?.file_path;
+  if (typeof direct === 'string' && direct) return [direct];
+
+  if (payload?.tool_name !== 'apply_patch') return [];
+  const command = payload?.tool_input?.command;
+  if (typeof command !== 'string') return [];
+
+  return [...command.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$/gm)].map((match) =>
+    match[1].trim(),
+  );
+}
+
 /** The last `count` lines of `text`. */
 export function tail(text, count) {
   return text.trim().split(/\r?\n/).slice(-count).join('\n');

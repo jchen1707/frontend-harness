@@ -5,42 +5,30 @@ stay on GitHub** — Linear holds the work item, GitHub holds the diff.
 
 ## Connecting
 
-Linear is declared in this repo's **`.mcp.json`** as a remote Streamable HTTP server
-(`https://mcp.linear.app/mcp`). Its bearer token comes from a `headersHelper`,
-`.claude/mcp-headers.mjs`, which reads the `linear-fro` slot from the OS credential store at
-connection time. No environment variable holds the key — see `docs/secrets.md` §4.
+Linear runs through Docker MCP Toolkit. Both harness configurations start
+`docker mcp gateway run`. Docker Desktop owns the authentication and enabled-server state.
 
-- Check it with `/mcp`; it appears as **linear**.
+- Authenticate Linear in Docker Desktop.
+- Enable Linear for the active Toolkit profile.
+- Select the **Development** workspace.
+- Check `/mcp` for the Toolkit gateway and its Linear tools.
 - MCP servers load at **session start**. Changing the config or the credential does not take
   effect until you restart.
-- If the tools are missing, run the helper directly:
-  `node .claude/mcp-headers.mjs linear-fro`. It prints a diagnostic naming the slot and exits
-  non-zero when the store has nothing, and it never prints the key. An empty slot means the
-  credential was never stored — `docs/secrets.md` §5 has the command.
+- If tools are missing, confirm that `docker mcp gateway run` works in the harness host.
+- Trust the project before Codex can load `.codex/config.toml`.
 
-### Why not the claude.ai account connector
+### Shared connection scope
 
-The connector is **one Linear connection for the whole account**. Pointing it at a different
-workspace moves every project at once, and `python-harness` is on a different workspace with
-its own triage labels — so one repo's tracker change would silently break the other's
-`/triage`.
+Docker MCP Toolkit shares its Linear connection with every attached client. Another
+repository can change the selected workspace. Confirm **Development** before a write.
 
-A Linear **personal API key belongs to the workspace it was created in**. Declaring the
-server per repo with a per-repo key makes the binding structural: this repo can only ever
-reach one workspace, and no account-level action can move it.
-
-**Do not run both.** If the account connector is still connected you get two Linear tool
-surfaces — `mcp__linear__*` and `mcp__claude_ai_Linear__*` — pointing at possibly different
-workspaces, and nothing tells you which one a write landed in. Disconnect the connector in
-claude.ai settings once this server works.
+Disable other Linear MCP connections. Multiple tool surfaces can target different
+workspaces, and their names do not prove the destination.
 
 ### Rotating or repointing
 
-Create the key at **Linear → Settings → Security & access → Personal API keys**, scoped to
-the workspace this repo should use. Set it in your **user** settings (`~/.claude/settings.json`
-→ `env`) or your shell profile — never in this repo's committed `.claude/settings.json`, which
-every clone would inherit. Moving this repo to a different workspace means issuing a key in
-that workspace and restarting; no repo file changes.
+Manage authentication and workspace selection in Docker Desktop MCP Toolkit. Restart the
+agent harness after you reconnect or change the enabled server.
 
 ## Workspace and team
 
@@ -60,7 +48,7 @@ authenticating with the same personal key) or from any issue id in the UI.
 ## Discovering the tools
 
 **List the tools before first use rather than assuming names.** The surface changes between
-releases, and the prefix depends on the server name in `.mcp.json` — `mcp__linear__*` here.
+releases. The tool prefix depends on the harness and the server name.
 
 `/mcp` shows the connected servers and their tools. Match the operation you need from the
 table below to what is actually offered.

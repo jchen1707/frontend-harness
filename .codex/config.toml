@@ -1,0 +1,22 @@
+[sandbox_workspace_write]
+network_access = true
+
+[mcp_servers.chrome_devtools]
+command = "npx"
+args = [
+  "-y",
+  "chrome-devtools-mcp@latest",
+  "--headless",
+  "--isolated",
+  "--redact-network-headers",
+  "--no-usage-statistics",
+  "--no-performance-crux",
+]
+required = false
+default_tools_approval_mode = "writes"
+
+[mcp_servers.docker_toolkit]
+command = "docker"
+args = ["mcp", "gateway", "run"]
+required = false
+default_tools_approval_mode = "writes"

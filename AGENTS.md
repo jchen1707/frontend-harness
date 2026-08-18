@@ -85,16 +85,17 @@ self-critique needs image-input consent.
 Git hooks and CI are the portable enforcement layer. Claude Code also runs the convenience
 hooks in `.claude/hooks/`; other harnesses must not assume those hooks ran:
 
-| Hook                                 | Effect                                                                                                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                 |
-| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                          |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                    |
-| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `CLAUDE_LEARNINGS_DIR` is set |
+| Hook                                 | Effect                                                                                                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                     |
+| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                              |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                        |
+| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `OBSIDIAN_VAULT_DIRECTORY` is set |
 
-The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it. The
-harness overrides a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck
-on something it cannot fix.
+The Stop gate is what makes a session walk-away-able. `HARNESS_SKIP_VERIFY=1` disables it,
+and the Claude-specific `CLAUDE_SKIP_VERIFY` is kept as a legacy alias. The harness overrides
+a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck on something it
+cannot fix.
 
 Git-side, husky covers the actor the Stop hook cannot — a human, or a session that skipped
 verify: pre-commit runs `lint-staged` + `typecheck`; pre-push runs `test` + `build`. A push
@@ -177,11 +178,10 @@ Two things that waste a call if you get them wrong:
 - **`workspaceSymbol` needs its `query`.** Empty queries return nothing from most servers.
 
 **It is configured as a plugin, not in `.mcp.json`.** Declaring `typescript-language-server`
-behind `mcp-language-server` was tried and does not work: that bridge fails to start against
-`tsls`, and against `vtsls` it lists all six tools while resolving nothing and crashes on
-`hover`. `mcp-language-server` is right for pyright in `python-harness` and wrong here. Do not
-reintroduce it — and if you ever swap the backing server, prove a real `goToDefinition` and
-`hover` against this repo rather than trusting a connected-looking server.
+behind `mcp-language-server` was tried and does not work. The bridge fails to start against
+`tsls`. Against `vtsls`, it lists all six tools, resolves nothing, and crashes on `hover`.
+Do not reintroduce it. If you swap the backing server, prove a real `goToDefinition` and
+`hover` against this repository.
 
 Setup is one command per machine and a clone does not inherit it — see the README.
 
@@ -286,18 +286,14 @@ Introducing an alternative to any of these means updating `docs/architecture.md`
 
 ## Issue tracker
 
-**Linear**, declared in this repo's `.mcp.json` as a remote server and authenticated by
-`headersHelper` → `.claude/mcp-headers.mjs`, which reads the `linear-fro` slot from the OS
-credential store — check with `/mcp`, where it shows as _linear_. No environment variable
-holds the key; `docs/secrets.md` §4 explains why, and why OAuth is not the answer here. MCP
-servers load at session start, so a config or credential change needs a restart. Conventions, tool discovery and wayfinding:
+**Linear** runs through Docker MCP Toolkit. Authenticate Linear in Docker Desktop and enable
+its server for the active Toolkit profile. Check `/mcp` for the Toolkit gateway and its
+Linear tools. MCP servers load at session start, so a Toolkit or config change needs a
+restart. Conventions, tool discovery and wayfinding:
 `docs/agents/issue-tracker.md`. PRs stay on GitHub.
 
-**Repo-level on purpose.** The claude.ai account connector is one Linear connection for the
-whole account, so pointing it at a different workspace moves every project at once —
-including `python-harness`, whose triage labels live in a different workspace. A Linear
-personal API key belongs to the workspace it was created in, so declaring the server here
-binds this repo to one workspace and nothing else can drift it.
+**Select the Development workspace in Docker Desktop.** Toolkit clients share this
+connection. Confirm the workspace before a write if another repository changes it.
 
 Workspace **Development**, team **Frontend**, key **`FRO`** — so issues read `FRO-123`. Branch
 as `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`) so review can resolve
@@ -322,8 +318,8 @@ workspace; it is not this repo's.
 - **Secrets never reach the transcript.** A key is compromised the moment its value enters
   the context window — it is on disk and in an API request in the same step, and only
   rotation undoes that. So: never print a secret, never read a file to see one, and refer to
-  a key by name. Keys that Claude Code itself reads live in the **OS credential store**
-  behind a `headersHelper`, never in an environment variable — the Bash tool is a child
+  a key by name. Docker MCP Toolkit owns its Linear credential. Never copy it into an
+  environment variable — the shell tool is a child
   process and inherits one, so `echo $KEY` would print it. Never in a `settings.json` `env`
   block either; that leaves the literal in a plaintext file an agent opens for unrelated
   edits, which is how this repo lost a key. Adding, storing or rotating any key:
@@ -335,7 +331,7 @@ Do not confuse them. They are not alternatives.
 
 |                    | Tool                                         | Job                                                                                            |
 | ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`)          | Agent-driven. Build, iterate on design, debug, profile. Costs tokens per run; asserts nothing. |
+| **Fast loop**      | `chrome-devtools` MCP                        | Agent-driven. Build, iterate on design, debug, profile. Costs tokens per run; asserts nothing. |
 | **Regression net** | `@playwright/test` → `e2e/`, `pnpm test:e2e` | Scripted specs. Runner, assertions, retries, CI. Costs nothing per run; fails the build.       |
 
 **Chrome DevTools MCP is not a test framework.** It has no runner, no assertions and no CI
@@ -393,7 +389,7 @@ When compacting, preserve the list of modified files and the commands needed to 
 A layer above memory, in the user's own notes rather than the agent's:
 
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
-  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`. It writes **nothing** when a session
+  fixes into a dated note under `Project Learnings`. It writes **nothing** when a session
   taught nothing. Every run appends one outcome line to `_hook.log` beside the notes, so a
   missing note is diagnosable: no log line means SessionEnd never fired (a closed terminal
   window skips it); a `failed:` line names the reason. When a session's notes matter, end it
@@ -403,11 +399,9 @@ A layer above memory, in the user's own notes rather than the agent's:
   `/search-second-brain` explains why, and covers the resulting lag.
 - **Read** — `/search-second-brain <topic>`. Read-only by design.
 
-Set `CLAUDE_LEARNINGS_DIR` in **user** settings, never in this repo's committed
-`.claude/settings.json` — a clone must not inherit a path to somebody else's vault.
-`CLAUDE_VAULT_DIR` stays optional: no hook here needs it, since nothing here indexes, but
-`/search-second-brain` uses it to locate the vault root it greps, falling back to the parent
-of the learnings directory.
+Set `OBSIDIAN_VAULT_DIRECTORY` in **user** settings. Do not set it in this repo's committed
+`.claude/settings.json`. The hook and `/search-second-brain` append `Project Learnings` when
+they need the learnings directory.
 
 Three tiers, deliberately: harness memory is for this project's facts, the second brain is
 for transferable lessons, and `AGENTS.md`, `docs/architecture.md`, and nested `AGENTS.md`

@@ -15,7 +15,7 @@ import { extname, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
-import { readPayload, run, shellSafe } from './lib.mjs';
+import { readPayload, run, shellSafe, toolPaths } from './lib.mjs';
 
 /** Extensions Prettier formats in this repo. Matches `.prettierignore` in spirit. */
 const PRETTIER = new Set([
@@ -38,21 +38,20 @@ const ESLINT = new Set(['.ts', '.tsx']);
 
 async function main() {
   const payload = await readPayload();
-  const raw = payload?.tool_input?.file_path;
-  if (!raw) return 0;
-
-  const extension = extname(raw).toLowerCase();
-  if (!PRETTIER.has(extension)) return 0;
-
-  // On Windows these commands go through `cmd.exe`, so a path carrying a shell
-  // metacharacter would be interpreted rather than passed. Skipping is safe: this hook
-  // is advisory, and lint-staged formats the file again at commit time.
-  if (!shellSafe(raw)) return 0;
-
   const cwd = payload.cwd ?? '';
-  run('pnpm', ['exec', 'prettier', '--write', raw], { cwd, timeout: 60_000 });
-  if (ESLINT.has(extension)) {
-    run('pnpm', ['exec', 'eslint', '--fix', raw], { cwd, timeout: 120_000 });
+  for (const raw of toolPaths(payload)) {
+    const extension = extname(raw).toLowerCase();
+    if (!PRETTIER.has(extension)) continue;
+
+    // On Windows these commands go through `cmd.exe`, so a path carrying a shell
+    // metacharacter would be interpreted rather than passed. Skipping is safe: this hook
+    // is advisory, and lint-staged formats the file again at commit time.
+    if (!shellSafe(raw)) continue;
+
+    run('pnpm', ['exec', 'prettier', '--write', raw], { cwd, timeout: 60_000 });
+    if (ESLINT.has(extension)) {
+      run('pnpm', ['exec', 'eslint', '--fix', raw], { cwd, timeout: 120_000 });
+    }
   }
   return 0;
 }
