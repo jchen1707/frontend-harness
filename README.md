@@ -179,11 +179,11 @@ How a request travels from landing in the tracker to meeting the Definition of D
 
 These skills add optional steps to the main path. Do not run all three for every ticket.
 
-| Skill | Place it | Use it when |
-| --- | --- | --- |
-| `/improve-codebase-architecture` | During alignment, after discovery or clarification and before specification | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
-| `/codebase-design` | During alignment, after you choose a candidate and before specification confirms the seams | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it. |
-| `/tdd` | During execution, inside implementation, after specification or planning confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review. |
+| Skill                            | Place it                                                                                    | Use it when                                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/improve-codebase-architecture` | During alignment, after discovery or clarification and before specification                 | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
+| `/codebase-design`               | During alignment, after you choose a candidate and before specification confirms the seams  | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it.            |
+| `/tdd`                           | During execution, inside implementation, after specification or planning confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review.                                  |
 
 For architecture work, use this order:
 
