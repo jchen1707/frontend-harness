@@ -160,18 +160,41 @@ How a request travels from landing in the tracker to meeting the Definition of D
             └─▶ ready-for-agent
                      │
                      ▼
-   ┌── ALIGNMENT — one unbroken context ──────────────┐
-   │  discover → clarify → specify → split             │
-   └──────────────────────────────────────────────────┘
+   ┌── ALIGNMENT — one unbroken context ───────────────────────────────────────┐
+   │ discover → clarify → /improve-codebase-architecture (if needed)           │
+   │ → /codebase-design (if interface/seam needs design)                       │
+   │ → specify → split                                                         │
+   └───────────────────────────────────────────────────────────────────────────┘
                      │ one ticket at a time
                      ▼
-   ┌── EXECUTION — branch first, fresh context per ticket ─┐
-   │  implement → verify → Standards + Spec review      │
-   └───────────────────────────────────────────────────────┘
+   ┌── EXECUTION — branch first, fresh context per ticket ─────────────────────┐
+   │ implement → /tdd (behavior change) → verify → Standards + Spec review     │
+   └───────────────────────────────────────────────────────────────────────────┘
                      │
                      ▼
               PR → Definition of Done
 ```
+
+### Where the Matt Pocock skills fit
+
+These skills add optional steps to the main path. Do not run all three for every ticket.
+
+| Skill | Place it | Use it when |
+| --- | --- | --- |
+| `/improve-codebase-architecture` | During alignment, after discovery or clarification and before specification | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
+| `/codebase-design` | During alignment, after you choose a candidate and before specification confirms the seams | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it. |
+| `/tdd` | During execution, inside implementation, after specification or planning confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review. |
+
+For architecture work, use this order:
+
+```
+discover → clarify → /improve-codebase-architecture → /codebase-design
+→ specify → split → implement → /tdd → verify → review
+```
+
+Skip the two architecture skills when the design is already clear. For small work, run `/tdd`
+inside implementation after plan sign-off. Skip `/tdd` for documentation-only or configuration-only
+changes.
 
 Small work can start at clarify or implement. The delivery skill records state in
 `.agents/plans/`, so a new agent or harness can resume it.
