@@ -302,6 +302,23 @@ describe('protected paths — the hook is wired to the read surface', () => {
       expect.arrayContaining(['Bash(cat .env:*)', 'Bash(source .env:*)']),
     );
   });
+
+  // The deny list ran to eight entries here and forty-seven in `python-harness`, because
+  // the secret-handling hardening landed on one side only. Reading it as four classes
+  // rather than a literal list keeps the two in step without pinning an exact array that
+  // every stack-specific addition would have to edit.
+  it('covers every route to a secret, not just the obvious one', () => {
+    const deny = settings.permissions.deny;
+    const covers = (pattern) => deny.some((entry) => pattern.test(entry));
+
+    expect(covers(/^Read\(\.\/\.env\)$/), 'direct read of .env').toBe(true);
+    expect(covers(/^Bash\(strings \.env/), 'shell readers beyond cat/head/tail').toBe(true);
+    expect(covers(/^Bash\(printenv/), 'environment dumps').toBe(true);
+    expect(covers(/^Bash\(Get-ChildItem Env:/), 'environment dumps on Windows').toBe(true);
+    expect(covers(/^Bash\(node -e:/), 'an interpreter one-liner reaching all of the above').toBe(
+      true,
+    );
+  });
 });
 
 /**

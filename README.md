@@ -207,8 +207,9 @@ not available. Both paths produce the same plans, tests, review evidence, and PR
 | `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                          |
 | `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain (notes only — `python-harness` owns the indexes) |
 
-Claude Code's Stop gate makes its sessions walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables
-that adapter for a session. Other harnesses rely on the verify skill, Git hooks, and CI.
+Claude Code's Stop gate makes its sessions walk-away-able. `HARNESS_SKIP_VERIFY=1` disables
+that adapter for a session; `CLAUDE_SKIP_VERIFY` remains as a legacy alias. Other harnesses
+rely on the verify skill, Git hooks, and CI.
 
 ## Conventions
 

@@ -92,9 +92,10 @@ hooks in `.claude/hooks/`; other harnesses must not assume those hooks ran:
 | `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                        |
 | `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `OBSIDIAN_VAULT_DIRECTORY` is set |
 
-The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it. The
-harness overrides a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck
-on something it cannot fix.
+The Stop gate is what makes a session walk-away-able. `HARNESS_SKIP_VERIFY=1` disables it,
+and the Claude-specific `CLAUDE_SKIP_VERIFY` is kept as a legacy alias. The harness overrides
+a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck on something it
+cannot fix.
 
 Git-side, husky covers the actor the Stop hook cannot — a human, or a session that skipped
 verify: pre-commit runs `lint-staged` + `typecheck`; pre-push runs `test` + `build`. A push
