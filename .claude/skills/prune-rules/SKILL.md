@@ -13,17 +13,18 @@ of them.
 
 ## The rule files
 
-| File                        | Scope                                                   |
-| --------------------------- | ------------------------------------------------------- |
-| `CLAUDE.md`                 | Root. Loaded every session.                             |
-| `docs/architecture.md`      | Cross-cutting standards only.                           |
-| `src/*/CLAUDE.md`           | Per-layer conventions, path-scoped.                     |
-| `src/features/CLAUDE.md`    | The slice contract: `ui` / `services` / `repositories`. |
-| `e2e/CLAUDE.md`             | E2E conventions.                                        |
-| `docs/agents/*.md`          | Tracker, triage and domain conventions.                 |
-| `.claude/agents/*.md`       | Subagent definitions, also the `full-review` axes.      |
-| `.claude/skills/*/SKILL.md` | Repo-owned skills — including this one.                 |
-| `.claude/commands/*.md`     | Repo-owned commands.                                    |
+| File                     | Scope                                                   |
+| ------------------------ | ------------------------------------------------------- |
+| `CLAUDE.md`              | Root. Loaded every session.                             |
+| `docs/architecture.md`   | Cross-cutting standards only.                           |
+| `src/*/CLAUDE.md`        | Per-layer conventions, path-scoped.                     |
+| `src/features/CLAUDE.md` | The slice contract: `ui` / `services` / `repositories`. |
+| `e2e/CLAUDE.md`          | E2E conventions.                                        |
+| `docs/agents/*.md`       | Tracker, triage and domain — the repo-specific half.    |
+
+| `.claude/agents/*.md` | Subagent definitions, also the `full-review` axes. |
+| `.claude/skills/*/SKILL.md` | Repo-owned skills — including this one. |
+| `.claude/commands/*.md` | Repo-owned commands. |
 
 **Glob the tree, do not trust this table.** It is itself a rule file and can go stale; an
 audit that reads only the paths listed here will miss whatever moved since it was written.

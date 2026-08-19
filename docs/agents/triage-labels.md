@@ -1,60 +1,11 @@
-# Triage Labels
+# Triage Labels — this repo
 
-The skills speak in terms of canonical triage roles: two **category** roles and five **state**
-roles. Every triaged issue carries exactly one of each. This file maps those roles to the
-actual label strings used in this repo's issue tracker.
+**The triage label mapping is shared doctrine**, provided by the `harness` plugin at
+`${CLAUDE_PLUGIN_ROOT}/docs/agents/triage-labels.md`.
 
-## Category roles
+This repo adds nothing to it. The labels are **workspace** labels in the shared
+**Development** workspace, so `frontend-harness` and `python-harness` see one set — there is
+no per-repo copy to keep in step, which is why there is nothing below this line.
 
-| Role in mattpocock/skills | Label in our tracker | Meaning                    |
-| ------------------------- | -------------------- | -------------------------- |
-| `bug`                     | `Bug`                | Something is broken        |
-| `enhancement`             | `Feature`            | New feature or improvement |
-
-## State roles
-
-| Role in mattpocock/skills | Label in our tracker | Meaning                                  |
-| ------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`            | `needs-triage`       | Maintainer needs to evaluate this issue  |
-| `needs-info`              | `needs-info`         | Waiting on reporter for more information |
-| `ready-for-agent`         | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`         | `ready-for-human`    | Requires human implementation            |
-| `wontfix`                 | `wontfix`            | Will not be actioned                     |
-
-When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding
-label string from these tables.
-
-Edit the right-hand columns to match whatever vocabulary you actually use.
-
-## Note for this repo
-
-The tracker is **Linear** (see `issue-tracker.md`). State labels are **labels**, not workflow
-states — applying one does not move the issue across the board. Set the Linear workflow state
-explicitly when the role implies one.
-
-**These labels are workspace-scoped. Select Development in Docker MCP Toolkit before a
-write.** All seven exist in workspace **Development** and were verified there on 2026-08-06:
-`Bug` and `Feature` are ungrouped. The five state labels use a `Triage` parent group. They are
-workspace-level, so the Backend team shares them.
-
-`Improvement` also exists and is ungrouped. Triage does not apply it — see below.
-
-**Moving this repo to another workspace means creating all seven again**, because nothing
-travels with the key. List what is actually present before trusting this table, and note the
-MCP server can create a label but cannot rename or delete one — a typo is a trip to the
-Linear UI. `python-harness` is on a different workspace with its own copy; neither inherits
-the other's.
-
-### One category per issue
-
-The skill requires exactly one category role per issue. If the workspace has a third label
-that also means "enhancement" (`Improvement`, `Enhancement`), triage does **not** apply it —
-two categories on one issue breaks the mapping. `Feature` is the single `enhancement` target;
-the others stay available for manual use.
-
-### Editing labels needs the Linear UI
-
-The Linear MCP server exposes `create_issue_label` but **no update or delete** for labels.
-Renaming a label, fixing a description, or removing one has to happen in the Linear UI
-(Settings → Labels) — an agent session cannot do it. Only the mapping tables above are
-editable from here.
+An earlier version of this file said the two repos sat on different workspaces with separate
+label copies. They do not: both reach Linear through the same Docker MCP gateway.

@@ -1,12 +1,10 @@
-# Secrets and API keys
+# Secrets and API keys — this repo
 
-How to add a key, where to put it, and what to do when one leaks.
+**Shared doctrine is provided by the `harness` plugin**, at
+`${CLAUDE_PLUGIN_ROOT}/docs/agents/secrets.md` — why a pasted value is already burned, how to
+add one, and what to do when one leaks. Read it first.
 
-The rule behind every step below: **a secret is compromised the moment its value enters
-an agent transcript.** The value reaches the context window, the transcript file on disk
-and the API request in one action. Deleting the file afterwards undoes none of that. So
-the practices here keep the literal out of the model's input, which is a different goal
-from keeping it out of git.
+This page covers where a key goes **in this repo**, and what is specific to a Vite bundle.
 
 ---
 

@@ -22,8 +22,12 @@ verification work out of the box.
 - `.claude/` — shared Claude Code config: `settings.json` (pre-approved commands, hooks,
   plugins), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`. `.claude/skills/`
   holds repo-owned skills, including a complete delivery fallback that needs no plugin.
-- `docs/agents/` — how agents work with this repo: `issue-tracker.md` (Linear conventions),
-  `triage-labels.md` (canonical triage roles → real label strings), `domain.md`.
+- The stack-neutral half of the harness arrives as the `harness` plugin, resolved outside
+  the repo through `${CLAUDE_PLUGIN_ROOT}` — so it is present in every worktree, which a
+  submodule would not be.
+- `docs/agents/` — how agents work with **this** repo: `issue-tracker.md` (the team and
+  branch prefix), `triage-labels.md`, `domain.md`. Each states only what is true here and
+  points at the shared doctrine.
 - `.out-of-scope/` — rejected feature requests, read by `/triage` to avoid re-litigating a
   decision that was already made.
 - `.github/workflows/ci.yml` — CI gates on Linux and Windows.
