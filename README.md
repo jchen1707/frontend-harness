@@ -1,4 +1,4 @@
-# frontend-development-harness
+# frontend-harness
 
 Guardrails, workflow, and standards for frontend (React/TypeScript) development — **a
 harness, not an application.** It defines how to build here (workflow, gates, architectural
