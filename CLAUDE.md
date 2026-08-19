@@ -1,4 +1,4 @@
-# frontend-development-harness
+# frontend-harness
 
 A **harness, not an application**: it defines _how_ to build here. Application code goes in
 `src/` per `docs/architecture.md`. Workload: React SPA, REST and GraphQL clients, AI features

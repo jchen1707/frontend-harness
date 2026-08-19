@@ -15,7 +15,7 @@ export default defineConfig({
       // have an offline/caching strategy (see docs/architecture.md § Service Workers).
       disable: true,
       manifest: {
-        name: 'frontend-development-harness',
+        name: 'frontend-harness',
         short_name: 'fe-harness',
         theme_color: '#0f172a',
       },
