@@ -33,8 +33,20 @@ verification work out of the box.
   plugins), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`. `.claude/skills/`
   holds repo-owned skills, including a complete delivery fallback that needs no plugin.
   /harness:claude -->
-- `docs/agents/` — how agents work with this repo: `issue-tracker.md` (Linear conventions),
-  `triage-labels.md` (canonical triage roles → real label strings), `domain.md`.
+- `docs/agents/` — how agents work with **this** repo: `issue-tracker.md` (the team and
+branch prefix), `triage-labels.md`, `domain.md`. Each states only what is true here and
+points at the shared doctrine.
+<!-- harness:agnostic -->
+- `.agents/vendor/harness/` — the stack-neutral half of the harness, generated from
+  [`harness`](https://github.com/jchen1707/harness) and pinned by sha. **Never edit it
+  here**; edit it there and re-run the sync. CI fails when this copy is hand-edited or the
+  pin falls behind.
+  <!-- /harness:agnostic -->
+  <!-- harness:claude
+- The stack-neutral half of the harness arrives as the `harness` plugin, resolved outside
+  the repo through `${CLAUDE_PLUGIN_ROOT}` — so it is present in every worktree, which a
+  submodule would not be.
+  /harness:claude -->
 - `.out-of-scope/` — rejected feature requests, read by `/triage` to avoid re-litigating a
   decision that was already made.
 - `.github/workflows/ci.yml` — CI gates on Linux and Windows.
