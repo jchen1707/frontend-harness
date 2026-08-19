@@ -9,6 +9,7 @@ on:
 
 jobs:
   body:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - name: Check the PR body against the template
