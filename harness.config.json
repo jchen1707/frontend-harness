@@ -1,0 +1,65 @@
+{
+  "name": "frontend-harness",
+  "tracker": {
+    "team": "FRO"
+  },
+  "install": ["pnpm", "install"],
+  "dev": {
+    "run": ["pnpm", "dev"],
+    "url": "http://localhost:5173",
+    "readyCheck": "the Home route renders; drive it with the Chrome DevTools MCP server and take_snapshot, which needs no image-input consent"
+  },
+  "gates": [
+    {
+      "name": "eslint",
+      "kind": "lint",
+      "run": ["pnpm", "lint"],
+      "caveat": "eslint-plugin-boundaries fails open. A file under src/ that no element pattern in eslint.config.js classifies is simply unchecked, so the architectural rule passes vacuously on any directory shape the config does not name."
+    },
+    {
+      "name": "prettier --check",
+      "kind": "format",
+      "run": ["pnpm", "format:check"],
+      "caveat": ".prettierignore excludes .agents/vendor/ deliberately \u2014 layer A owns its own formatting and reflowing it here would break the vendored copy's sha check on every sync."
+    },
+    {
+      "name": "tsc --noEmit",
+      "kind": "types",
+      "run": ["pnpm", "typecheck"]
+    },
+    {
+      "name": "vitest",
+      "kind": "test",
+      "run": ["pnpm", "test"]
+    },
+    {
+      "name": "vite build",
+      "kind": "build",
+      "run": ["pnpm", "build"],
+      "caveat": "this is the only gate that checks the browser target. A top-level await passes typecheck and still fails the build against es2020 \u2014 which is why it is a gate and not a release step."
+    },
+    {
+      "name": "playwright",
+      "kind": "e2e",
+      "run": ["pnpm", "test:e2e"],
+      "when": "the change alters user-visible behaviour, real navigation, focus across a page load, or anything depending on real layout",
+      "caveat": "needs browsers installed: pnpm exec playwright install chromium."
+    },
+    {
+      "name": "lighthouse",
+      "kind": "integration",
+      "run": ["pnpm", "lhci"],
+      "when": "performance or accessibility budgets are in scope",
+      "caveat": "exits 0 far more readily than it looks. Only the accessibility assertion is `error`; performance, best-practices and SEO are `warn`, and the performance category currently scores null because the pinned Lighthouse cannot trace against the installed Chrome. A category with no score is not a pass \u2014 read the assertion output, not the exit code."
+    }
+  ],
+  "review": {
+    "agentDir": ".claude/agents",
+    "checklistDir": "docs/agents/subagents",
+    "ninthAxis": {
+      "label": "a11y",
+      "agent": "a11y-reviewer"
+    },
+    "styleEnforcedBy": "ESLint, Prettier or tsc"
+  }
+}

@@ -2,24 +2,32 @@
 
 The repository contract is independent of Claude Code, Codex, or another agent harness.
 
-| Concern             | Canonical location                  | Harness adapter                             |
-| ------------------- | ----------------------------------- | ------------------------------------------- |
-| Instructions        | `AGENTS.md` and nested `AGENTS.md`  | `CLAUDE.md` pointer files                   |
-| Skills              | `.agents/skills/*/SKILL.md`         | `.claude/skills/*/SKILL.md` pointer skills  |
-| Workflow state      | `.agents/plans/`                    | A harness may expose its own UI or commands |
-| Reviewer prompts    | `.claude/agents/*.md` prompt bodies | Claude frontmatter and workflow runner      |
-| Linear MCP          | Docker MCP Toolkit gateway          | `.mcp.json` and `.codex/config.toml`        |
-| Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`        |
-| Lifecycle hooks     | `.claude/hooks/*.mjs` scripts       | Claude settings and `.codex/hooks.json`     |
-| Deterministic gates | `package.json`, Husky, and CI       | Stop hooks are an extra Claude Code layer   |
-| Shared harness half | `jchen1707/harness`, one source     | Vendored here; the plugin on `main`         |
+| Concern             | Canonical location                  | Harness adapter                                 |
+| ------------------- | ----------------------------------- | ----------------------------------------------- |
+| Instructions        | `AGENTS.md` and nested `AGENTS.md`  | `CLAUDE.md` pointer files                       |
+| Skills              | `.agents/skills/*/SKILL.md`         | `.claude/skills/*/SKILL.md` pointer skills      |
+| Shared skills       | `harness`, one source               | Vendored, plus a stub under `.agents/skills/`   |
+| Workflow state      | `.agents/plans/`                    | A harness may expose its own UI or commands     |
+| Reviewer frames     | `harness`, one source               | Vendored under `.agents/vendor/harness/agents/` |
+| Reviewer checklists | `docs/agents/subagents/*.md`        | Read alongside the frame, in that order         |
+| This repo's agents  | `.claude/agents/*.md` prompt bodies | Claude frontmatter and workflow runner          |
+| Linear MCP          | Docker MCP Toolkit gateway          | `.mcp.json` and `.codex/config.toml`            |
+| Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`            |
+| Lifecycle hooks     | `.claude/hooks/*.mjs` scripts       | Claude settings and `.codex/hooks.json`         |
+| Deterministic gates | `package.json`, Husky, and CI       | Stop hooks are an extra Claude Code layer       |
+| Shared harness half | `jchen1707/harness`, one source     | Vendored here; the plugin on `main`             |
 
 ## The shared half arrives through an adapter too
 
-The stack-neutral content — tracker conventions, the triage mapping, domain-doc rules,
-secret doctrine — is owned once in [`harness`](https://github.com/jchen1707/harness) and
-reaches this repo the same way everything else does: through whichever adapter the harness
-understands.
+The stack-neutral content — the eight workflow commands, the eight shared review frames, the
+shared skills and `full-review.js`, plus tracker conventions, the triage mapping, domain-doc
+rules and secret doctrine — is owned once in
+[`harness`](https://github.com/jchen1707/harness) and reaches this repo the same way
+everything else does: through whichever adapter the harness understands.
+
+None of it names `pnpm`, `src/features/` or a Linear team key. It reads them from
+`harness.config.json` at this repo's root, which is the contract that makes one authoring
+possible — see `.agents/vendor/harness/docs/agents/config.md`.
 
 | Harness                  | How it arrives                                                    |
 | ------------------------ | ----------------------------------------------------------------- |

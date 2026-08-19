@@ -32,11 +32,17 @@ jobs:
             Review pull request #${{ github.event.pull_request.number }} on two axes and
             post the findings as one PR comment.
 
-            1. Standards: apply the reviewer prompt in .claude/agents/standards-reviewer.md
-               to the diff against the merge-base with main.
+            Each reviewer is two halves. The shared frame is layer A; the checklist under
+            docs/agents/subagents/ is this repository's. Read both, in that order — a frame
+            with no checklist reviews on general advice and reports a confident clean.
+
+            1. Standards: apply .agents/vendor/harness/agents/standards-reviewer.md plus
+               docs/agents/subagents/standards-reviewer.md to the diff against the
+               merge-base with main.
             2. Spec: resolve the Linear ticket id from the branch name
                (`<type>/FRO-<num>-<slug>`). If it resolves, apply
-               .claude/agents/spec-checker.md against the PR description's stated intent.
+               .agents/vendor/harness/agents/spec-checker.md against the PR description's
+               stated intent — that frame carries its whole review and needs no checklist.
                If no ticket resolves, state that and skip this axis.
 
             Report defects only, ranked most severe first, each with file:line and a
