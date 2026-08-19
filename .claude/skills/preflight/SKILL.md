@@ -1,10 +1,10 @@
 ---
 name: preflight
 description: Run before opening a PR. Checks the process gates the code gates cannot see — PR body, tracker state, test coverage of the diff, plan status, branch freshness — and produces the Evidence scorecard for the PR body. Use when about to run gh pr create, or when asked whether the work is ready to ship.
-argument-hint: '[PR number to re-check, or blank for the current branch]'
+argument-hint: '[PR number to re-check] [--base branch]'
 ---
 
-`/verify` proves the diff works. This skill proves the **workflow was followed**. Every
+The `verify` skill proves the diff works. This skill proves the **workflow was followed**. Every
 check below is a step that leaked during a real run (the FRO-5 shakedown, 2026-08-08):
 gates that passed only in CI, an empty PR body, a tracker stuck in Todo, a stale plan
 status, a diff with unguarded behaviour.
@@ -12,6 +12,10 @@ status, a diff with unguarded behaviour.
 Report each check as **PASS / FAIL / N-A with one line of evidence** — a command output, a
 file line, a tool result. Never a bare assertion. Evidence you cannot produce means the
 check FAILED.
+
+Resolve the PR base before the checks. Use `--base` when the argument supplies it. Otherwise,
+use the existing PR base. If no PR exists, use the remote default branch. Use the resolved
+base for every diff and freshness check.
 
 ## The checks
 
@@ -23,13 +27,13 @@ Run them in order. Independent checks can run in parallel.
    Evidence: the tail of each command's output.
 
 2. **The diff is guarded.** Compare the diff against the merge-base
-   (`git diff --stat $(git merge-base HEAD main)`). Every changed behaviour under `src/`
+   (`git diff --stat $(git merge-base HEAD <base>)`). Every changed behaviour under `src/`
    has a changed or added test; changed UI behaviour has an `e2e/` spec. A diff that
    changes `src/` and touches no test file FAILS unless the change is provably
    behaviour-free (types, comments, renames). Evidence: the paired source and test paths.
 
 3. **Branch freshness.** `git fetch origin` ran this unit of work; the branch is based on
-   current `origin/main`; any PR this session contributed to has had its merge state
+   current `origin/<base>`; any PR this session contributed to has had its merge state
    re-checked (`gh pr view <n> --json state`). Evidence: the fetch and the base check.
 
 4. **PR body.** The draft body exists and fills every template section — Summary (with
@@ -46,7 +50,7 @@ Run them in order. Independent checks can run in parallel.
    line matching reality right now. A line describing a process as "running" from an
    earlier session is a FAIL — fix the line. Evidence: the quoted line.
 
-7. **Learnings.** Friction from this work is captured — `/retro` ran, or there is an
+7. **Learnings.** Friction from this work is captured through an available memory tool, or there is an
    explicit "no friction worth keeping". Evidence: the memory file written, or the
    one-line statement.
 

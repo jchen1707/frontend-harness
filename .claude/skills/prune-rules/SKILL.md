@@ -74,7 +74,7 @@ number against the thing it describes.
    finding.
 4. **Propose, then wait.** Present the findings with the proposed edit for each, and stop.
    Deleting a rule someone relies on is worse than leaving a stale one.
-5. **Apply only what is approved**, and re-run `/verify` if any file the gates read has
+5. **Apply only what is approved**, and re-run the `verify` skill if any gated file has
    changed.
 
 ## Deprecating, not just deleting

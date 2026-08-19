@@ -20,7 +20,7 @@ many turns. Starting one must be the user's explicit act.
    - the stop condition, verbatim
    - a checklist of areas, each `pending` / `done` / `skipped (reason)`
    - what changed each pass, one line per pass
-3. **Work one area per pass.** Smallest useful unit. After each: run `/verify`, commit if
+3. **Work one area per pass.** Smallest useful unit. After each: run the `verify` skill, commit if
    green, update the progress file.
 4. **Re-read the progress file at the start of every pass.** Trust it over your memory of
    the conversation — after a compaction it is the only accurate record.
@@ -54,9 +54,6 @@ Each names its own stop condition. Use these verbatim unless the user overrides.
 
 ## Running unattended
 
-To run without stopping for input, pass the goal and a turn budget, and rely on the `Stop`
-hook (`.claude/hooks/verify.mjs`) to keep the loop honest — it blocks the turn while the
-Definition of Done fails, so a pass cannot end on broken code.
-
-Note the harness overrides a `Stop` hook after **8 consecutive blocks**. If a pass hits that,
-the loop is stuck on something it cannot fix: stop and report, do not start another pass.
+To run without stopping for input, pass the goal and a turn budget. Run the `verify` skill
+after every pass. A harness-native stop hook may add enforcement, but the loop must not depend
+on one. Stop and report when a verification failure repeats or the pass limit is reached.

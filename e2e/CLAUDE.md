@@ -55,4 +55,4 @@ Two directions to resist:
 
 > **Image-input consent (hard rule).** A screenshot (`take_screenshot`) or a screencast feeds
 > an image into the model. Stop and ask the user for permission first; prefer `take_snapshot`,
-> which is text. See CLAUDE.md → Guardrails.
+> which is text. See root `CLAUDE.md` → Guardrails.

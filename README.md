@@ -8,22 +8,20 @@ standards. It is the frontend sibling of [`python-harness`](https://github.com/j
 Target workload: React 19 SPA, REST and GraphQL clients, AI features served from a backend
 (Vite · TypeScript strict · Zod · TanStack Query · Apollo · Tailwind · Vitest · Playwright).
 
-The repo ships a minimal, runnable skeleton (a health route + its tests) so `/run` and
-`/verify` work out of the box.
+The repo ships a minimal, runnable skeleton (a health route + its tests) so development and
+verification work out of the box.
 
 ## What's here
 
-- `CLAUDE.md` — the source of truth: stack, workflow, Definition of Done, what the hooks
-  enforce, context/memory guidance. Loaded every Claude Code session.
+- `CLAUDE.md` — the harness-neutral source of truth: stack, workflow, Definition of Done,
+  and context guidance. Codex and other compatible agents load it directly.
 - `docs/architecture.md` — **cross-cutting** standards only: the dependency rule, interfaces,
   data fetching, config, types, styling, accessibility, performance, testing, dependency
   policy (load with `/arch`).
 - `package.json` — tool config and the approved stack.
 - `.claude/` — shared Claude Code config: `settings.json` (pre-approved commands, hooks,
-  plugin), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`.
-- `.claude/settings.json` → `enabledPlugins` — declares the `mattpocock-skills` plugin, so a
-  clone picks it up automatically and it self-updates. `.claude/skills/` holds repo-owned
-  skills only.
+  plugins), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`. `.claude/skills/`
+  holds repo-owned skills, including a complete delivery fallback that needs no plugin.
 - `docs/agents/` — how agents work with this repo: `issue-tracker.md` (Linear conventions),
   `triage-labels.md` (canonical triage roles → real label strings), `domain.md`.
 - `.out-of-scope/` — rejected feature requests, read by `/triage` to avoid re-litigating a
@@ -35,8 +33,8 @@ The repo ships a minimal, runnable skeleton (a health route + its tests) so `/ru
 
 ## Layout — rules live next to the code
 
-Each directory owns its conventions. Read the file for the directory you are changing; Claude
-Code loads it automatically when working there.
+Each directory owns its conventions. Read the root file and every nested `CLAUDE.md` that
+applies to the path you change.
 
 ```
 src/
@@ -85,10 +83,10 @@ pnpm exec playwright install chromium     # once, before the first pnpm test:e2e
 
 They are not alternatives, and picking the wrong one is the common mistake:
 
-|                    | Tool                                | Job                                                                                                   |
-| ------------------ | ----------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`) | Agent-driven: build, iterate on design, debug, profile. Needs Chrome installed; no setup beyond that. |
-| **Regression net** | `@playwright/test` → `e2e/`         | Scripted specs with assertions, retries and CI. `pnpm test:e2e`.                                      |
+|                    | Tool                        | Job                                                                                                   |
+| ------------------ | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Fast loop**      | `chrome-devtools` MCP       | Agent-driven: build, iterate on design, debug, profile. Needs Chrome installed; no setup beyond that. |
+| **Regression net** | `@playwright/test` → `e2e/` | Scripted specs with assertions, retries and CI. `pnpm test:e2e`.                                      |
 
 Chrome DevTools MCP has **no runner, no assertions and no CI integration** — nothing it does
 can fail a build. It is for exploring and diagnosing, and it is fast at that: a text a11y
@@ -102,10 +100,10 @@ The committed config runs `--headless --isolated`, so the agent gets a throwaway
 profile rather than your real one, plus `--redact-network-headers`, `--no-usage-statistics`
 and `--no-performance-crux` so credentials, usage data and traced URLs stay on the machine.
 
-### Symbol navigation (once per machine)
+### Symbol navigation (optional)
 
-Agents resolve TypeScript **symbols** — definitions, references, types — through Claude
-Code's built-in `LSP` tool instead of grepping for text. Two steps, both one-off:
+Use the harness's TypeScript LSP integration when it has one. Fall back to `rg` plus manual
+definition and import inspection when it does not. Claude Code setup is:
 
 ```sh
 npm install -g typescript-language-server
@@ -125,33 +123,15 @@ the two position gotchas that waste a call: `CLAUDE.md` → Symbol navigation.
 
 ### Linear (optional, once per machine)
 
-`.mcp.json` declares Linear as a remote server whose `Authorization` header comes from
-`.claude/mcp-headers.mjs`, which reads the OS credential store. Create a personal API key at
-**Linear → Settings → Security & access → Personal API keys**, in the workspace this repo
-should use, then store it once — in a real terminal, so the value never reaches an agent:
-
-```powershell
-$dir = Join-Path $env:USERPROFILE '.claude\mcp-credentials'
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-(Read-Host -AsSecureString 'Paste the Linear key') |
-  ConvertFrom-SecureString | Set-Content (Join-Path $dir 'linear-fro.cred')
-```
-
-Restart Claude Code, then check `/mcp`. **Set no environment variable.** The Bash tool
-inherits Claude Code's environment, so a `LINEAR_API_KEY` variable can be printed into a
-transcript by one careless command — and a key in a transcript has to be rotated. See
-`docs/secrets.md` for the full reasoning, the macOS and Linux equivalents, and rotation.
-
-A personal API key belongs to one workspace, which is the point: it binds this repo to that
-workspace, where the claude.ai account connector would bind your whole account and move every
-project at once. If you were using the connector, disconnect it once this works, or two
-Linear tool surfaces show up and neither says which workspace a write reached.
+Authenticate Linear in Docker Desktop MCP Toolkit. Enable Linear for the active profile.
+Select the **Development** workspace. Restart the active harness, then check `/mcp` for the
+Toolkit gateway and its Linear tools.
 
 ### Second brain (optional)
 
-Set `CLAUDE_LEARNINGS_DIR` in your **user** settings — never in this repo's committed
-`.claude/settings.json`, or a clone inherits a path to your vault. With it set, the SessionEnd
-hook distils each session's hard-won lessons into a dated note.
+Set `OBSIDIAN_VAULT_DIRECTORY` in your **user** settings. Do not set it in this repo's
+committed `.claude/settings.json`. The SessionEnd hook writes dated notes to the vault's
+`Project Learnings` directory.
 
 **This harness writes notes; it does not index them.** `python-harness` owns
 `_VAULT_INDEX.md` and `Project Learnings/_INDEX.md` and rebuilds both when a session ends
@@ -162,13 +142,13 @@ here do not appear in either index until you next end a session in `python-harne
 ## The SDLC
 
 How a request travels from landing in the tracker to meeting the Definition of Done.
-`CLAUDE.md` is the authority; this is the map.
+`CLAUDE.md` is the authority. Skill and command names are adapters for these stages.
 
 ```
    Linear issue
         │
         ▼
-   /triage ─┬─▶ needs-triage ⇄ needs-info      evaluation loop, not terminal
+   triage ──┬─▶ needs-triage ⇄ needs-info      evaluation loop, not terminal
             │
             ├─▶ ready-for-human · wontfix      leaves the pipeline
             │
@@ -176,15 +156,14 @@ How a request travels from landing in the tracker to meeting the Definition of D
                      │
                      ▼
    ┌── ALIGNMENT — one unbroken context ───────────────────────────────────────┐
-   │ /grill-with-docs → /improve-codebase-architecture (if needed)             │
+   │ discover → clarify → /improve-codebase-architecture (if needed)           │
    │ → /codebase-design (if interface/seam needs design)                       │
-   │ → /to-spec → /to-tickets                                                  │
+   │ → specify → split                                                         │
    └───────────────────────────────────────────────────────────────────────────┘
                      │ one ticket at a time
                      ▼
    ┌── EXECUTION — branch first, fresh context per ticket ─────────────────────┐
-   │ /plan → sign-off → /implement-from-plan → /tdd (behavior change)          │
-   │ → /verify → /code-review                                                  │
+   │ implement → /tdd (behavior change) → verify → Standards + Spec review     │
    └───────────────────────────────────────────────────────────────────────────┘
                      │
                      ▼
@@ -195,24 +174,25 @@ How a request travels from landing in the tracker to meeting the Definition of D
 
 These skills add optional steps to the main path. Do not run all three for every ticket.
 
-| Skill | Place it | Use it when |
-| --- | --- | --- |
-| `/improve-codebase-architecture` | During alignment, after `/grill-with-docs` and before `/to-spec` | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
-| `/codebase-design` | During alignment, after you choose a candidate and before `/to-spec` confirms the seams | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it. |
-| `/tdd` | During execution, inside `/implement`, after `/to-spec` or `/plan` confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review. |
+| Skill                            | Place it                                                                                    | Use it when                                                                                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/improve-codebase-architecture` | During alignment, after discovery or clarification and before specification                 | The change exposes architectural friction, shallow modules, or hard-to-test code. It scans the codebase and gives you candidates to choose from. |
+| `/codebase-design`               | During alignment, after you choose a candidate and before specification confirms the seams  | The module, interface, or seam needs design. Use its deep-module vocabulary to reduce the interface and hide more behavior behind it.            |
+| `/tdd`                           | During execution, inside implementation, after specification or planning confirms the seams | The ticket adds or changes behavior. Run one red → green cycle per vertical slice, then refactor during review.                                  |
 
 For architecture work, use this order:
 
 ```
-/grill-with-docs → /improve-codebase-architecture → /codebase-design
-→ /to-spec → /to-tickets → /implement → /tdd → /verify → /code-review
+discover → clarify → /improve-codebase-architecture → /codebase-design
+→ specify → split → implement → /tdd → verify → review
 ```
 
-Skip the two architecture skills when the design is already clear. For the small-work path,
-run `/tdd` inside `/implement-from-plan` after plan sign-off. Skip `/tdd` for documentation-only
-or configuration-only changes.
+Skip the two architecture skills when the design is already clear. For small work, run `/tdd`
+inside implementation after plan sign-off. Skip `/tdd` for documentation-only or configuration-only
+changes.
 
-Small work skips alignment: `/plan` in one terminal, `/implement-from-plan` in another.
+Small work can start at clarify or implement. The delivery skill records state in
+`.claude/plans/`, so a new agent or harness can resume it.
 
 ## Commands
 
@@ -228,15 +208,13 @@ Small work skips alignment: `/plan` in one terminal, `/implement-from-plan` in a
 | `pnpm test:e2e`                     | Playwright E2E (boots the dev server)    |
 | `pnpm lhci`                         | Lighthouse CI against built `dist/`      |
 
-Slash commands come from three places, and the session's skill listing shows all of them:
+The canonical skills live in `.claude/skills/`. Start with `delivery` for end-to-end work,
+`verify` for gates, and `loop-goal` for standing work. A harness can expose these as skills,
+commands, or direct instructions. Claude Code adapters live in `.claude/`.
 
-- **`.claude/commands/`** — repo-owned: `/plan`, `/implement-from-plan`, `/arch`, `/lint`,
-  `/test`, `/run`, `/context`, `/retro`.
-- **`.claude/skills/`** — repo-owned skills: `/verify`, `/loop-goal`, `/prune-rules`,
-  `/search-second-brain`.
-- **`mattpocock-skills` plugin** — `/triage`, `/grill-with-docs`, `/to-spec`, `/to-tickets`,
-  `/implement`, `/tdd`, `/code-review`, `/wayfinder` and the rest. Declared in
-  `.claude/settings.json`; never vendored into the repo.
+Matt Pocock's skills plugin remains enabled for Claude Code and may implement matching
+delivery stages. Codex and other harnesses use the repository fallback when that plugin is
+not available. Both paths produce the same plans, tests, review evidence, and PR shape.
 
 ## What runs without being asked
 
@@ -247,8 +225,9 @@ Slash commands come from three places, and the session's skill listing shows all
 | `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                          |
 | `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain (notes only — `python-harness` owns the indexes) |
 
-The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it for a
-session.
+Claude Code's Stop gate makes its sessions walk-away-able. `HARNESS_SKIP_VERIFY=1` disables
+that adapter for a session; `CLAUDE_SKIP_VERIFY` remains as a legacy alias. Other harnesses
+rely on the verify skill, Git hooks, and CI.
 
 ## Conventions
 

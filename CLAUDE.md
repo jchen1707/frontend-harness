@@ -7,7 +7,7 @@ ecosystem.
 
 ## Commands
 
-Everything runs through `pnpm`. Gates, in the order `/verify` runs them:
+Everything runs through `pnpm`. Gates, in the order the `verify` skill runs them:
 
 ```sh
 pnpm lint
@@ -28,51 +28,47 @@ pnpm test:e2e
 
 ## The workflow
 
-**Ticket-shaped work** runs the main flow, in one unbroken context through `/to-tickets`:
+The stages every path runs through:
+
+```
+discover → clarify → specify → split → implement → verify → review → deliver
+```
+
+Ticket-shaped work runs the main flow, in one unbroken context:
 
 ```
 /grill-with-docs  →  /to-spec  →  /to-tickets  →  /implement  →  /code-review
 ```
 
-Alignment work needs continuity; execution work needs a clean slate. Keep steps 1–3 in one
-context window — no `/compact`, no `/clear` — so the grilling, spec and tickets build on the
-same thinking. Then start each `/implement` **fresh**, working only from its ticket.
+Those five are plugin skills marked `disable-model-invocation`: they do not appear in the
+agent's skill listing and only the user can run them (`/mattpocock-skills:<name>`). Absence
+from the listing means user-invocable, not missing — do not report them as nonexistent.
+Small work uses `/plan` → (new terminal) → `/implement-from-plan` instead.
 
-The five main-flow commands are plugin skills marked `disable-model-invocation`: they do not
-appear in the agent's skill listing and only the user can run them
-(`/mattpocock-skills:<name>`). Absence from the listing means user-invocable, not missing —
-do not report them as nonexistent.
+Keep discovery through splitting in one context. Record the result in
+`.claude/plans/plan.md` and `.claude/plans/test-plan.md`. Use a fresh context for each ticket
+when the harness supports it. A single agent may execute the same stages sequentially when it
+does not.
 
-**Small work** — anything you could describe in one sentence, or a change you want planned by
-one model and built by another — uses the repo's own path instead:
-
-```
-/plan  →  (new terminal)  →  /implement-from-plan
-```
-
-`/plan` writes `.claude/plans/plan.md` + `test-plan.md`, gets explicit sign-off, and stops.
-`/implement-from-plan` feeds those files to `/implement` with this repo's slices and gates
-pinned. Choose this when the work is too small to spec, or when you want the model-switching
-handoff.
-
-Either path ends the same way: `/verify`, then `/code-review`, then commit. Committing to a
-feature branch and opening a PR needs no permission; committing to `main` does.
+Small work can start at clarify or implement. Ticket-shaped work starts at discovery. Every
+path ends with the repository gates and independent Standards and Spec review. Committing to
+a feature branch and opening a PR needs no permission; committing to `main` does.
 
 On GitHub, adding the `agent-review` label to a PR triggers one CI review pass on the Spec
 and Standards axes (`.github/workflows/agent-review.yml`). It is label-gated because it is
 billed spend, and it needs the `ANTHROPIC_API_KEY` repository secret.
 
-### Where `frontend-design` runs
+### Where visual design runs
 
 Visual direction is chosen **once, at alignment time**, and recorded — the same rule §0
 applies to architecture. Who invokes the skill depends on the path:
 
-| Path                                               | Invocation                                                                                                                                                                                        |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Small work (`/plan`)                               | Automatic — `/plan` step 4 runs the skill when the work has a visual surface and records the **Design direction** in `plan.md`                                                                    |
-| Main flow (ticket-shaped)                          | **You invoke it** — type `/frontend-design` in the alignment context, after `/to-spec` and before `/to-tickets`, so the direction lands in the spec and tickets inherit it as acceptance criteria |
-| Ad-hoc restyling ("make this look better")         | **You invoke it** directly; the chosen tokens land in `tailwind.config.js` in the same change                                                                                                     |
-| `/implement` on a UI ticket, no direction anywhere | The implementer loads the skill before the first component and logs the choice — the fallback, not the plan                                                                                       |
+| Path                                         | Invocation                                                                                  |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Small work                                   | Run an available design skill during planning and record **Design direction** in the plan.  |
+| Ticket-shaped work                           | Run it after specification and before splitting so tickets inherit its acceptance criteria. |
+| Ad-hoc restyling                             | Run it before editing and write chosen tokens in `tailwind.config.js`.                      |
+| UI implementation with no recorded direction | The implementer defines and records a direction before the first component.                 |
 
 Wherever it runs, the same three rules bind it: tokens in `tailwind.config.js` (no
 arbitrary values), a new typeface is a §14 dependency decision, and screenshot
@@ -82,30 +78,31 @@ self-critique needs image-input consent.
 
 - All six gate commands above pass (`test:e2e` when UI behaviour changed)
 - New behaviour has a test that would fail if the behaviour regressed
-- `/code-review` clean on Standards; clean on Spec when there's an originating ticket
+- Standards review is clean; Spec review is clean when there is an originating ticket
 - The PR body follows `.github/PULL_REQUEST_TEMPLATE.md` — a PR with an empty body is not
-  done. Fill it from the plan and the `/verify` evidence already in hand
+  done. Fill it from the plan and verification evidence already in hand
 - The Linear issue tracks the work: **In Progress** when the branch starts, **In Review**
   with the PR attached when it opens — `docs/agents/issue-tracker.md` → Status sync
 - Config and env read only through `src/env.ts`; no secret behind a `VITE_` prefix
 - No stray `console.*` — log through `src/core/logger.ts`
-- Friction worth remembering captured via `/retro`
+- Friction worth remembering is captured in the harness memory mechanism when one exists
 
 ## What is enforced automatically
 
-Hooks run in the harness, so they hold regardless of what any instruction here says. See
-`.claude/hooks/`:
+Git hooks and CI are the portable enforcement layer. Claude Code also runs the convenience
+hooks in `.claude/hooks/`; other harnesses must not assume those hooks ran:
 
-| Hook                                 | Effect                                                                                                                                                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                 |
-| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                          |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                    |
-| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `CLAUDE_LEARNINGS_DIR` is set |
+| Hook                                 | Effect                                                                                                                                                                        |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                     |
+| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                              |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                        |
+| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `OBSIDIAN_VAULT_DIRECTORY` is set |
 
-The Stop gate is what makes a session walk-away-able. `CLAUDE_SKIP_VERIFY=1` disables it. The
-harness overrides a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck
-on something it cannot fix.
+The Stop gate is what makes a session walk-away-able. `HARNESS_SKIP_VERIFY=1` disables it,
+and the Claude-specific `CLAUDE_SKIP_VERIFY` is kept as a legacy alias. The harness overrides
+a Stop hook after 8 consecutive blocks; if you hit that, the loop is stuck on something it
+cannot fix.
 
 Git-side, husky covers the actor the Stop hook cannot — a human, or a session that skipped
 verify: pre-commit runs `lint-staged` + `typecheck`; pre-push runs `test` + `build`. A push
@@ -130,9 +127,9 @@ on files. `.claude/agents/test-writer.md` sets `isolation: worktree`; add it to 
 that writes. Claude Code blocks a worktree agent from redirecting git back into the main
 checkout, so the isolation actually holds.
 
-Subagents live in `.claude/agents/`, each defining its own tools and model. Their names and
-descriptions are loaded into every session automatically from that frontmatter — do not
-restate them here, or the copy drifts.
+Reusable reviewer prompts live in `.claude/agents/` until a common agent-manifest format is
+available. Any harness may read and run those prompts; their frontmatter is only a Claude Code
+adapter.
 
 The nine reviewers are also the nine axes of `full-review.js`, which reads each prompt from
 the agent file rather than restating it. Add an axis by writing the agent file and adding one
@@ -145,16 +142,16 @@ signal is the whole point.
 
 ## Loops and workflows
 
-- **`/loop-goal <goal>`** — standing goals that run until a stop condition holds (docs,
-  architecture, a11y, tests, perf, deps). Progress lives in `.claude/plans/loop-<goal>.md` so
-  it survives compaction.
+- **`loop-goal <goal>`** — run the repo-owned skill for standing goals (docs, architecture,
+  a11y, tests, perf, deps). Progress lives in `.claude/plans/loop-<goal>.md`.
 - **`.claude/workflows/full-review.js`** — dynamic workflow fanning a diff out to nine
-  independent reviewers and fanning in to one ranked report. Run it with `/workflows`, or
-  trigger workflow mode with the `ultracode` keyword. Reviews against `main` unless
+  independent reviewers and fanning in to one ranked report. Claude Code can run it through
+  its workflow adapter. Other harnesses fan out the prompts with their agent tool, or run the
+  axes sequentially. Reviews compare against `main` unless
   `REVIEW_BASE` says otherwise (`$env:REVIEW_BASE = "..."`). Nine agents is real spend — reach
-  for `/code-review` (two axes) by default and this when the diff warrants it.
+  for Standards and Spec review by default and this when the diff warrants it.
 
-## Symbol navigation (LSP) — prefer it to grep
+## Symbol navigation (LSP) — prefer it when available
 
 The built-in **`LSP` tool** answers questions about **symbols**, where grep answers questions
 about **text**. It is backed by `typescript-language-server`, registered through the
@@ -189,11 +186,10 @@ Two things that waste a call if you get them wrong:
 - **`workspaceSymbol` needs its `query`.** Empty queries return nothing from most servers.
 
 **It is configured as a plugin, not in `.mcp.json`.** Declaring `typescript-language-server`
-behind `mcp-language-server` was tried and does not work: that bridge fails to start against
-`tsls`, and against `vtsls` it lists all six tools while resolving nothing and crashes on
-`hover`. `mcp-language-server` is right for pyright in `python-harness` and wrong here. Do not
-reintroduce it — and if you ever swap the backing server, prove a real `goToDefinition` and
-`hover` against this repo rather than trusting a connected-looking server.
+behind `mcp-language-server` was tried and does not work. The bridge fails to start against
+`tsls`. Against `vtsls`, it lists all six tools, resolves nothing, and crashes on `hover`.
+Do not reintroduce it. If you swap the backing server, prove a real `goToDefinition` and
+`hover` against this repository.
 
 Setup is one command per machine and a clone does not inherit it — see the README.
 
@@ -225,7 +221,7 @@ The four rules to know without reading anything:
 - **Zod at every boundary.** Parse, never `as`. Explicit types on every export, no `any`.
 - **Unit tests stay offline.** MSW intercepts everything; the browser suite is Playwright.
 
-Pick the architectural style and design pattern per feature during `/plan`, not while coding,
+Pick the architectural style and design pattern per feature during planning, not while coding,
 and record the choice — `docs/architecture.md` §0.
 
 ## Reference documentation — read before you write
@@ -243,7 +239,7 @@ rewrite.
 | Choosing REST vs GraphQL, or tuning a query    | `docs/architecture.md` §3                               |
 | Promoting a component to the design system     | `src/components/CLAUDE.md`                              |
 | Styling anything                               | `docs/architecture.md` §10                              |
-| Choosing a visual direction for new UI         | the `frontend-design` skill — at plan time, see `/plan` |
+| Choosing a visual direction for new UI         | an available design skill, or the delivery fallback     |
 | Building an interaction, a dialog, or a form   | `src/components/CLAUDE.md` → Accessible by construction |
 | Deciding SSR, SSG, or SEO                      | `docs/architecture.md` §7                               |
 | Working on bundle size, caching, or streaming  | `docs/architecture.md` §12                              |
@@ -298,21 +294,17 @@ Introducing an alternative to any of these means updating `docs/architecture.md`
 
 ## Issue tracker
 
-**Linear**, declared in this repo's `.mcp.json` as a remote server and authenticated by
-`headersHelper` → `.claude/mcp-headers.mjs`, which reads the `linear-fro` slot from the OS
-credential store — check with `/mcp`, where it shows as _linear_. No environment variable
-holds the key; `docs/secrets.md` §4 explains why, and why OAuth is not the answer here. MCP
-servers load at session start, so a config or credential change needs a restart. Conventions, tool discovery and wayfinding:
+**Linear** runs through Docker MCP Toolkit. Authenticate Linear in Docker Desktop and enable
+its server for the active Toolkit profile. Check `/mcp` for the Toolkit gateway and its
+Linear tools. MCP servers load at session start, so a Toolkit or config change needs a
+restart. Conventions, tool discovery and wayfinding:
 `docs/agents/issue-tracker.md`. PRs stay on GitHub.
 
-**Repo-level on purpose.** The claude.ai account connector is one Linear connection for the
-whole account, so pointing it at a different workspace moves every project at once —
-including `python-harness`, whose triage labels live in a different workspace. A Linear
-personal API key belongs to the workspace it was created in, so declaring the server here
-binds this repo to one workspace and nothing else can drift it.
+**Select the Development workspace in Docker Desktop.** Toolkit clients share this
+connection. Confirm the workspace before a write if another repository changes it.
 
 Workspace **Development**, team **Frontend**, key **`FRO`** — so issues read `FRO-123`. Branch
-as `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`) so `/code-review` can resolve
+as `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`) so review can resolve
 the originating ticket mechanically. `BAC` (Backend) is the sibling team in the same
 workspace; it is not this repo's.
 
@@ -334,8 +326,8 @@ workspace; it is not this repo's.
 - **Secrets never reach the transcript.** A key is compromised the moment its value enters
   the context window — it is on disk and in an API request in the same step, and only
   rotation undoes that. So: never print a secret, never read a file to see one, and refer to
-  a key by name. Keys that Claude Code itself reads live in the **OS credential store**
-  behind a `headersHelper`, never in an environment variable — the Bash tool is a child
+  a key by name. Docker MCP Toolkit owns its Linear credential. Never copy it into an
+  environment variable — the shell tool is a child
   process and inherits one, so `echo $KEY` would print it. Never in a `settings.json` `env`
   block either; that leaves the literal in a plaintext file an agent opens for unrelated
   edits, which is how this repo lost a key. Adding, storing or rotating any key:
@@ -347,7 +339,7 @@ Do not confuse them. They are not alternatives.
 
 |                    | Tool                                         | Job                                                                                            |
 | ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Fast loop**      | `chrome-devtools` MCP (`.mcp.json`)          | Agent-driven. Build, iterate on design, debug, profile. Costs tokens per run; asserts nothing. |
+| **Fast loop**      | `chrome-devtools` MCP                        | Agent-driven. Build, iterate on design, debug, profile. Costs tokens per run; asserts nothing. |
 | **Regression net** | `@playwright/test` → `e2e/`, `pnpm test:e2e` | Scripted specs. Runner, assertions, retries, CI. Costs nothing per run; fails the build.       |
 
 **Chrome DevTools MCP is not a test framework.** It has no runner, no assertions and no CI
@@ -381,7 +373,7 @@ never the committed default.
 - PowerShell: `$env:VAR = "value"`, backtick continues a line, `;` chains — `&&` does not work
   in 5.1. `pnpm` needs no `cd` prefix.
 
-## Where commands come from
+## Where workflows come from
 
 - `.claude/commands/` and `.claude/skills/` — repo-owned and `pnpm`-aware. Edit freely. The
   names and descriptions are already in the session's skill listing; do not enumerate them
@@ -389,11 +381,12 @@ never the committed default.
 - **`mattpocock-skills` plugin** — declared in `.claude/settings.json`; files live under
   `~/.claude/plugins/`. Installed from upstream's marketplace (`mattpocock/skills`), **not**
   Anthropic's mirror, which lags a version behind. Never vendor them into the repo.
-- **`frontend-design` plugin** (`claude-plugins-official`) — the visual-design skill.
-  Enabled in this repo's `.claude/settings.json` so a clone inherits it. The workflow
-  invokes it **at plan time** (`/plan` → Design direction), not mid-build; three repo rules
-  bind its output — tokens go in `tailwind.config.js`, a new typeface is a §14 dependency
-  decision, and its screenshot self-critique needs image-input consent.
+- **`frontend-design` plugin** — the visual-design skill, enabled in `.claude/settings.json`
+  so a clone inherits it. Invoke it **at plan time**, not mid-build.
+
+For visual work, use an installed design skill when available. Otherwise use the design
+fallback in the delivery skill. Tokens go in `tailwind.config.js`; a new typeface is a §14
+dependency decision; image-based critique needs explicit image-input consent.
 
 ## Memory
 
@@ -408,7 +401,7 @@ When compacting, preserve the list of modified files and the commands needed to 
 A layer above memory, in the user's own notes rather than the agent's:
 
 - **Write** — `session_learnings.mjs` (SessionEnd) distils the session's mistakes and their
-  fixes into a dated note under `CLAUDE_LEARNINGS_DIR`. It writes **nothing** when a session
+  fixes into a dated note under `Project Learnings`. It writes **nothing** when a session
   taught nothing. Every run appends one outcome line to `_hook.log` beside the notes, so a
   missing note is diagnosable: no log line means SessionEnd never fired (a closed terminal
   window skips it); a `failed:` line names the reason. When a session's notes matter, end it
@@ -418,13 +411,10 @@ A layer above memory, in the user's own notes rather than the agent's:
   `/search-second-brain` explains why, and covers the resulting lag.
 - **Read** — `/search-second-brain <topic>`. Read-only by design.
 
-Set `CLAUDE_LEARNINGS_DIR` in **user** settings, never in this repo's committed
-`.claude/settings.json` — a clone must not inherit a path to somebody else's vault.
-`CLAUDE_VAULT_DIR` stays optional: no hook here needs it, since nothing here indexes, but
-`/search-second-brain` uses it to locate the vault root it greps, falling back to the parent
-of the learnings directory.
+Set `OBSIDIAN_VAULT_DIRECTORY` in **user** settings. Do not set it in this repo's committed
+`.claude/settings.json`. The hook and `/search-second-brain` append `Project Learnings` when
+they need the learnings directory.
 
-Three tiers, deliberately: memory is for this project's facts, the second brain is for
-transferable lessons across projects, and `CLAUDE.md` / `docs/architecture.md` / the nested
-`CLAUDE.md` files are for what has hardened into a rule. A lesson recurring across sessions
-should be promoted up.
+Three tiers, deliberately: harness memory is for this project's facts, the second brain is
+for transferable lessons, and `CLAUDE.md`, `docs/architecture.md`, and nested `CLAUDE.md`
+files are for rules. Promote recurring lessons into the portable repository layer.

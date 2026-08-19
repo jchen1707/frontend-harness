@@ -18,17 +18,19 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
+
 import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import { SLOT_PATTERN, credentialPath, headers, lookupCommand } from '../mcp-headers.mjs';
 import { blockReason, globToRegExp } from './protect_paths.mjs';
+import { toolPaths } from './lib.mjs';
 import {
   DISTILLER_MARKER,
   frontMatterValue,
   isDistillerTranscript,
+  learningsDirectory,
   noteBody,
   placeNote,
   priorBody,
@@ -42,6 +44,26 @@ import {
   isGated,
   porcelainPath,
 } from './verify.mjs';
+
+const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+describe('cross-harness tool paths', () => {
+  it('reads the direct file path used by Claude file tools', () => {
+    expect(toolPaths({ tool_input: { file_path: 'src/a.ts' } })).toEqual(['src/a.ts']);
+  });
+
+  it('reads every path from a Codex apply_patch call', () => {
+    expect(
+      toolPaths({
+        tool_name: 'apply_patch',
+        tool_input: {
+          command:
+            '*** Begin Patch\n*** Update File: src/a.ts\n*** Add File: src/b.ts\n*** Delete File: dist/a.js\n*** End Patch',
+        },
+      }),
+    ).toEqual(['src/a.ts', 'src/b.ts', 'dist/a.js']);
+  });
+});
 
 describe('Stop-gate pathspec', () => {
   it('covers the application, its specs and the hooks that enforce the gates', () => {
@@ -66,9 +88,8 @@ describe('Stop-gate pathspec', () => {
     }
   });
 
-  it('covers the MCP credential helper, which Vitest tests but no gated path holds', () => {
-    expect(GATED_FILES.has('.claude/mcp-headers.mjs')).toBe(true);
-    expect(isGated('.claude/mcp-headers.mjs')).toBe(true);
+  it('covers the MCP configurations, which no gated path holds', () => {
+    expect(isGated('.mcp.json')).toBe(true);
   });
 
   it('gates every source extension the toolchain reads', () => {
@@ -179,66 +200,48 @@ describe('protected paths — the hook is wired to the read surface', () => {
       expect.arrayContaining(['Bash(cat .env:*)', 'Bash(source .env:*)']),
     );
   });
+
+  // The deny list ran to eight entries here and forty-seven in `python-harness`, because
+  // the secret-handling hardening landed on one side only. Reading it as four classes
+  // rather than a literal list keeps the two in step without pinning an exact array that
+  // every stack-specific addition would have to edit.
+  it('covers every route to a secret, not just the obvious one', () => {
+    const deny = settings.permissions.deny;
+    const covers = (pattern) => deny.some((entry) => pattern.test(entry));
+
+    expect(covers(/^Read\(\.\/\.env\)$/), 'direct read of .env').toBe(true);
+    expect(covers(/^Bash\(strings \.env/), 'shell readers beyond cat/head/tail').toBe(true);
+    expect(covers(/^Bash\(printenv/), 'environment dumps').toBe(true);
+    expect(covers(/^Bash\(Get-ChildItem Env:/), 'environment dumps on Windows').toBe(true);
+    expect(covers(/^Bash\(node -e:/), 'an interpreter one-liner reaching all of the above').toBe(
+      true,
+    );
+  });
 });
 
 /**
- * The MCP credential helper.
- *
- * The point of the helper is that no environment variable holds the Linear key, so the
- * regression to catch is a quiet return to `Bearer ${LINEAR_API_KEY}` — which works
- * identically, and puts the key back where `echo` can reach it.
+ * The MCP configuration.
  */
-describe('mcp credential helper', () => {
+describe('mcp configuration', () => {
   const here = dirname(fileURLToPath(import.meta.url));
   const mcp = JSON.parse(readFileSync(join(here, '..', '..', '.mcp.json'), 'utf8'));
 
-  it('authenticates Linear through the helper, not through an environment variable', () => {
-    const linear = mcp.mcpServers.linear;
-    expect(linear.headersHelper).toContain('mcp-headers.mjs');
-    // A static header would need the key in Claude Code's env, which every child
-    // process inherits. That is the exposure the helper exists to remove.
-    expect(linear.headers).toBeUndefined();
+  it('starts Docker MCP Toolkit for Linear', () => {
+    expect(mcp.mcpServers['docker-toolkit']).toEqual({
+      command: 'docker',
+      args: ['mcp', 'gateway', 'run'],
+    });
     expect(JSON.stringify(mcp)).not.toContain('LINEAR_API_KEY');
   });
 
-  it('names a credential slot, so a sibling repo can hold a different workspace key', () => {
-    const slot = mcp.mcpServers.linear.headersHelper.trim().split(/\s+/).at(-1);
-    expect(slot).toBe('linear-fro');
-    expect(SLOT_PATTERN.test(slot)).toBe(true);
-  });
-
-  it('rejects a slot name that could reach the shell as syntax', () => {
-    for (const slot of ['', 'a b', "x'; rm -rf /", '../../etc/passwd', 'UPPER', '-lead']) {
-      expect(SLOT_PATTERN.test(slot)).toBe(false);
-    }
-  });
-
-  it('builds the Authorization header the MCP server expects', () => {
-    expect(headers('tok')).toEqual({ Authorization: 'Bearer tok' });
-  });
-
-  it('reads a per-user credential path rather than anything inside the repo', () => {
-    const path = credentialPath('linear-fro', '/home/u').replaceAll('\\', '/');
-    expect(path).toBe('/home/u/.claude/mcp-credentials/linear-fro.cred');
-  });
-
-  it('escapes a quote in the home path before it reaches PowerShell', () => {
-    // A literal `'` would close the PowerShell string and turn the rest into code.
-    // Assert the doubling, not the separators — `join` follows the host platform.
-    const [, args] = lookupCommand('win32', 'linear-fro', "C:/Users/o'brien");
-    expect(args.at(-1)).toContain("o''brien");
-  });
-
-  it('uses the platform credential store on each OS', () => {
-    expect(lookupCommand('win32', 'linear-fro', '/h')[0]).toBe('powershell');
-    expect(lookupCommand('darwin', 'linear-fro', '/h')).toEqual([
-      'security',
-      ['find-generic-password', '-s', 'claude-mcp-linear-fro', '-w'],
-    ]);
-    expect(lookupCommand('linux', 'linear-fro', '/h')).toEqual([
-      'secret-tool',
-      ['lookup', 'service', 'claude-mcp-linear-fro'],
-    ]);
+  // The server was renamed in `.mcp.json` while `enabledMcpjsonServers` still named the
+  // old one, so the gateway was configured and never enabled. Neither file is wrong on
+  // its own; only the pair is.
+  it('enables exactly the servers it defines', () => {
+    const settings = JSON.parse(
+      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
+    );
+    expect([...settings.enabledMcpjsonServers].sort()).toEqual(Object.keys(mcp.mcpServers).sort());
   });
 });
 
@@ -282,6 +285,13 @@ describe('second brain', () => {
  * they are pinned here rather than left to the next read of the vault.
  */
 describe('session learnings — note identity', () => {
+  it('derives the learnings directory from the Obsidian vault root', () => {
+    expect(learningsDirectory({ OBSIDIAN_VAULT_DIRECTORY: '/vault' })).toBe(
+      join('/vault', 'Project Learnings'),
+    );
+    expect(learningsDirectory({})).toBe('');
+  });
+
   const note = (session, body, date = '2026-01-01 10:00') =>
     `---\ndate: ${date}\nproject: p\nsession: ${session}\nsummary: s\n---\n\n# p — session learnings (${date})\n\n${body}\n`;
 
@@ -458,7 +468,7 @@ describe('session learnings — end to end', () => {
 
   /** A vault of its own per test, so one test's notes cannot decide another's outcome. */
   function vault(name) {
-    const directory = join(root, `vault-${name}`);
+    const directory = join(root, `vault-${name}`, 'Project Learnings');
     mkdirSync(directory, { recursive: true });
     return {
       directory,
@@ -491,10 +501,12 @@ describe('session learnings — end to end', () => {
     const env = { ...process.env };
     // Case-insensitively on Windows: two PATH keys in one env block is a coin toss.
     for (const key of Object.keys(env)) {
-      if (/^(path|claude_learnings_(dir|off|skip))$/i.test(key)) delete env[key];
+      if (/^(path|obsidian_vault_directory|claude_learnings_(off|skip))$/i.test(key)) {
+        delete env[key];
+      }
     }
     env.PATH = `${bin}${delimiter}${process.env.PATH ?? ''}`;
-    env.CLAUDE_LEARNINGS_DIR = directory;
+    env.OBSIDIAN_VAULT_DIRECTORY = dirname(directory);
     env.STUB_CALLS = calls;
     env.STUB_OUTPUT = stubOutput;
     env.STUB_INPUT = stubInput;

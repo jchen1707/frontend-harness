@@ -31,7 +31,7 @@ export default defineConfig({
   },
   test: {
     globals: false,
-    environment: 'jsdom',
+    environment: './src/test/vitest-environment.ts',
     setupFiles: ['./vitest.setup.ts'],
     css: true,
     // E2E specs are run by Playwright, not Vitest.

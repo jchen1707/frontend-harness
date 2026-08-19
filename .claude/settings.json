@@ -27,23 +27,62 @@
       "Bash(gh api:*)"
     ],
     "deny": [
-      "Bash(cat .env:*)",
-      "Bash(cat ./.env:*)",
-      "Bash(head .env:*)",
-      "Bash(tail .env:*)",
-      "Bash(source .env:*)",
       "Bash(git reset --hard:*)",
       "Bash(git push --force:*)",
-      "Bash(git push -f:*)"
+      "Bash(git push -f:*)",
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.*.local)",
+      "Read(./.env.development)",
+      "Read(./.env.production)",
+      "Read(./.env.staging)",
+      "Read(./.env.test)",
+      "Bash(cat .env:*)",
+      "Bash(cat ./.env:*)",
+      "Bash(source .env:*)",
+      "Bash(type .env:*)",
+      "Bash(more .env:*)",
+      "Bash(less .env:*)",
+      "Bash(head .env:*)",
+      "Bash(tail .env:*)",
+      "Bash(nl .env:*)",
+      "Bash(strings .env:*)",
+      "Bash(Get-Content .env:*)",
+      "Bash(gc .env:*)",
+      "Bash(env)",
+      "Bash(printenv:*)",
+      "Bash(set)",
+      "Bash(export)",
+      "Bash(export -p:*)",
+      "Bash(declare -x:*)",
+      "Bash(typeset -x:*)",
+      "Bash(compgen -e:*)",
+      "Bash(Get-ChildItem Env:*)",
+      "Bash(gci Env:*)",
+      "Bash(ls Env:*)",
+      "Bash(dir Env:*)",
+      "Bash(Get-Variable:*)",
+      "Bash(echo $LINEAR_API_KEY:*)",
+      "Bash(echo \"$LINEAR_API_KEY\":*)",
+      "Bash(echo ${LINEAR_API_KEY}:*)",
+      "Bash(echo $env:LINEAR_API_KEY:*)",
+      "Bash(echo $GH_TOKEN:*)",
+      "Bash(echo \"$GH_TOKEN\":*)",
+      "Bash(echo ${GH_TOKEN}:*)",
+      "Bash(echo $env:GH_TOKEN:*)",
+      "Bash(python -c:*)",
+      "Bash(python3 -c:*)",
+      "Bash(node -e:*)",
+      "Bash(node -p:*)"
     ]
   },
   "enabledPlugins": {
-    "mattpocock-skills@mattpocock": true,
+    "mattpocock-skills@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
     "frontend-design@claude-plugins-official": true
   },
   "plansDirectory": ".claude/plans",
-  "enabledMcpjsonServers": ["chrome-devtools", "linear"],
+  "enabledMcpjsonServers": ["chrome-devtools", "docker-toolkit"],
   "hooks": {
     "PreToolUse": [
       {
@@ -54,7 +93,7 @@
             "command": "node",
             "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/protect_paths.mjs"],
             "timeout": 30,
-            "statusMessage": "Checking protected paths…"
+            "statusMessage": "Checking protected paths\u2026"
           }
         ]
       }
@@ -68,7 +107,7 @@
             "command": "node",
             "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/format_edited.mjs"],
             "timeout": 120,
-            "statusMessage": "Formatting…"
+            "statusMessage": "Formatting\u2026"
           }
         ]
       }
@@ -81,7 +120,7 @@
             "command": "node",
             "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/verify.mjs"],
             "timeout": 600,
-            "statusMessage": "Verifying Definition of Done…"
+            "statusMessage": "Verifying Definition of Done\u2026"
           }
         ]
       }
@@ -94,7 +133,7 @@
             "command": "node",
             "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/session_learnings.mjs"],
             "timeout": 300,
-            "statusMessage": "Distilling session learnings…"
+            "statusMessage": "Distilling session learnings\u2026"
           }
         ]
       }

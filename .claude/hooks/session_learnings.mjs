@@ -16,14 +16,14 @@
  * session that taught nothing. Diagnosis: no line for a session means SessionEnd never
  * fired — a closed terminal window skips it; a `failed:` line names the reason.
  *
- * Configure with `CLAUDE_LEARNINGS_DIR` (absolute path to the notes directory). Unset
+ * Configure with `OBSIDIAN_VAULT_DIRECTORY` (absolute path to the vault root). Unset
  * means disabled, which is the right default for a harness other people clone — nobody
  * inherits a path to somebody else's vault. Set it in **user** settings, not this repo's
  * committed `.claude/settings.json`.
  *
  * | Variable | Effect |
  * | --- | --- |
- * | `CLAUDE_LEARNINGS_DIR` | Where notes are written. Unset -> hook does nothing. |
+ * | `OBSIDIAN_VAULT_DIRECTORY` | Vault root. Notes go in `Project Learnings`. |
  * | `CLAUDE_LEARNINGS_OFF=1` | Disable without unsetting the directory. |
  * | `CLAUDE_LEARNINGS_MODEL` | Model for the distillation. Default `sonnet`. |
  * | `CLAUDE_LEARNINGS_SKIP=1` | Recursion guard; set on the child, never set by hand. |
@@ -106,6 +106,12 @@ const DISTILL_TIMEOUT = 240_000;
  * the previous version — treat it as a wire format, not a comment.
  */
 export const DISTILLER_MARKER = 'SESSION-LEARNINGS-DISTILLER-V1';
+
+/** Return the Project Learnings directory from the configured Obsidian vault root. */
+export function learningsDirectory(environment = process.env) {
+  const vault = (environment.OBSIDIAN_VAULT_DIRECTORY ?? '').trim();
+  return vault ? join(vault, 'Project Learnings') : '';
+}
 
 /**
  * How many transcript lines the marker check reads before it gives up. The opening prompt
@@ -429,7 +435,7 @@ export function splitSummary(text) {
 async function main() {
   if (process.env.CLAUDE_LEARNINGS_OFF === '1') return 0;
 
-  const directory = (process.env.CLAUDE_LEARNINGS_DIR ?? '').trim();
+  const directory = learningsDirectory();
   if (!directory) return 0; // Not configured -> not this clone's business.
 
   try {

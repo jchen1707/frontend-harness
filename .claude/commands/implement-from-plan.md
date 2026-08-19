@@ -68,6 +68,7 @@ This command supplies all three.
 10. **Commit, and open the PR only when asked.** `/implement` commits to the current branch.
     Opening the PR is a separate, explicit step — run `gh pr create` only if the user asks.
     When you do open one:
+
     - Run `/preflight` first. It checks the process gates the code gates cannot see — body,
       tracker, test coverage of the diff, plan status — and produces the Evidence scorecard.
     - The body follows `.github/PULL_REQUEST_TEMPLATE.md`. **Never open a PR with an empty

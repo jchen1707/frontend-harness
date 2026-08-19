@@ -12,10 +12,9 @@
         "--no-performance-crux"
       ]
     },
-    "linear": {
-      "type": "http",
-      "url": "https://mcp.linear.app/mcp",
-      "headersHelper": "node \"${CLAUDE_PROJECT_DIR:-.}/.claude/mcp-headers.mjs\" linear-fro"
+    "docker-toolkit": {
+      "command": "docker",
+      "args": ["mcp", "gateway", "run"]
     }
   }
 }

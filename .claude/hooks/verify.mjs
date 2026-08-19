@@ -26,7 +26,9 @@
  * Convergence matters: every gate here is one Claude can actually fix. A check that
  * can never pass wastes 8 turns of tokens before being overridden anyway.
  *
- * Escape hatch: set `CLAUDE_SKIP_VERIFY=1` to disable for a session.
+ * Escape hatch: set `HARNESS_SKIP_VERIFY=1` to disable for a session. The legacy
+ * `CLAUDE_SKIP_VERIFY` name remains supported — the gate is not Claude's, and naming it
+ * after one harness is how the same escape hatch ended up with two names.
  */
 
 import { resolve } from 'node:path';
@@ -60,9 +62,8 @@ export const GATED_PATHS = ['src', 'e2e', '.claude/hooks'];
  * outside them; a change breaks something without touching any application code.
  */
 export const GATED_FILES = new Set([
-  // Not a gate config, but Vitest tests it and a broken edit silently drops the Linear
-  // connection at the next session start, which looks like an outage rather than a bug.
-  '.claude/mcp-headers.mjs',
+  // These files configure external tools that Vitest checks.
+  '.mcp.json',
   'package.json',
   'pnpm-lock.yaml',
   'tsconfig.json',
@@ -113,7 +114,7 @@ export function gatedChange(cwd) {
 }
 
 async function main() {
-  if (process.env.CLAUDE_SKIP_VERIFY === '1') return 0;
+  if (process.env.HARNESS_SKIP_VERIFY === '1' || process.env.CLAUDE_SKIP_VERIFY === '1') return 0;
 
   const payload = await readPayload();
   if (!payload) return 0;
