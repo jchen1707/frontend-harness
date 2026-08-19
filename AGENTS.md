@@ -152,13 +152,24 @@ that writes. Claude Code blocks a worktree agent from redirecting git back into 
 checkout, so the isolation actually holds.
 /harness:claude -->
 
-Reusable reviewer prompts live in `.claude/agents/` until a common agent-manifest format is
-available. Any harness may read and run those prompts; their frontmatter is only a Claude Code
-adapter.
+**A reviewer is half a definition each way.** The shared **frame** — the role, the method,
+the reporting rules — is layer A, identical in every stack. What "in this repo's terms" means
+is this repo's, at `docs/agents/subagents/<agent-name>.md`. `full-review` concatenates the
+two, and the standalone subagent reads the checklist itself, so the two forms cannot drift.
 
-The nine reviewers are also the nine axes of `full-review.js`, which reads each prompt from
-the agent file rather than restating it. Add an axis by writing the agent file and adding one
-entry to `AXES`; there is no second copy to keep in step.
+Neither half reviews on its own, and both failures are silent: a frame with no checklist
+reviews on general advice and reports a confident clean.
+
+- **Shared frames** — `.agents/vendor/harness/agents/` (the plugin, on `main`). Never edited
+  here; edit them in [`harness`](https://github.com/jchen1707/harness) and re-sync.
+- **This repo's half** — `docs/agents/subagents/`.
+- **This repo's own agents** — `.claude/agents/`: `a11y-reviewer`, the ninth axis, and
+  `test-writer`, which is here because it writes and so its tool grant names a runner.
+
+Any harness may read and run those prompts; their frontmatter is only a Claude Code adapter.
+
+Add an axis by writing the agent file and naming it in `harness.config.json`; there is no
+second copy to keep in step.
 
 **Fork for breadth, stay inline for depth.** Scanning and summarising belong in a subagent;
 reasoning you need to steer belongs in the main context. Reviewers get read-only tools by
@@ -169,12 +180,17 @@ signal is the whole point.
 
 - **`loop-goal <goal>`** — run the repo-owned skill for standing goals (docs, architecture,
   a11y, tests, perf, deps). Progress lives in `.agents/plans/loop-<goal>.md`.
-- **`.claude/workflows/full-review.js`** — dynamic workflow fanning a diff out to nine
-  independent reviewers and fanning in to one ranked report. Claude Code can run it through
-  its workflow adapter. Other harnesses fan out the prompts with their agent tool, or run the
-  axes sequentially. Reviews compare against `main` unless
-  `REVIEW_BASE` says otherwise (`$env:REVIEW_BASE = "..."`). Nine agents is real spend — reach
-  for Standards and Spec review by default and this when the diff warrants it.
+- **`full-review.js`** — layer A's dynamic workflow, fanning a diff out to nine independent
+  reviewers and fanning in to one ranked report. Claude Code runs it through its workflow
+  adapter; other harnesses use the `full-review` skill, which drives the same axes through
+  their own agent tool. Reviews compare against `main` unless `REVIEW_BASE` says otherwise
+  (`$env:REVIEW_BASE = "..."`). Nine agents is real spend — reach for Standards and Spec
+  review by default and this when the diff warrants it.
+
+  It reads `harness.config.json` for the ninth axis and for which tools already own style,
+  and it **throws rather than falling back** when an axis resolves to no frame and no
+  checklist. An axis reviewing on a one-line brief reports "no findings" from a reviewer that
+  never ran, which is indistinguishable from a clean one.
 
 ## Symbol navigation (LSP) — prefer it when available
 
@@ -411,15 +427,25 @@ never the committed default.
 
 <!-- harness:agnostic -->
 
-- `.agents/skills/` contains the canonical repo-owned procedures.
-- `.claude/skills/` and `.claude/commands/` adapt those procedures for Claude Code.
+- The commands and the shared skills are **layer A**, vendored under
+  `.agents/vendor/harness/{commands,skills}/` and pinned by sha. Every stack fact they need
+  comes from `harness.config.json` at the repo root — the gates, the dev server, the review
+  axes. **Never edit anything under `.agents/vendor/`**; `vendor-freshness.yml` fails on a
+  hand edit as loudly as on a stale pin.
+- `.agents/skills/` holds this repo's own procedures — `delivery`, `preflight` — plus one
+  thin stub per shared command and skill, because a harness that discovers skills by
+  directory does not glob the vendored tree. A stub is an address, not a copy.
+- `.claude/skills/` adapts only the repo-owned ones. A shared skill must have no adapter:
+  on `main` the plugin supplies it, and a pointer would materialise a shadowing duplicate.
 - Installed plugins can implement a workflow stage, but they are optional accelerators.
 - `docs/harness-compatibility.md` defines capability discovery and fallbacks.
   <!-- /harness:agnostic -->
   <!-- harness:claude
-- `.claude/commands/` and `.claude/skills/` — repo-owned and `pnpm`-aware. Edit freely. The
-  names and descriptions are already in the session's skill listing; do not enumerate them
-  here.
+- **The `harness` plugin** — declared in `.claude/settings.json`. It supplies the eight
+  workflow commands, the eight shared review frames and the shared skills, and reads
+  `harness.config.json` at this repo's root for every stack fact. Never edit its files here.
+- `.claude/skills/` — this repo's own procedures, `pnpm`-aware. Edit freely. The names and
+  descriptions are already in the session's skill listing; do not enumerate them here.
 - **`mattpocock-skills` plugin** — declared in `.claude/settings.json`; files live under
   `~/.claude/plugins/`. Installed from upstream's marketplace (`mattpocock/skills`), **not**
   Anthropic's mirror, which lags a version behind. Never vendor them into the repo.
