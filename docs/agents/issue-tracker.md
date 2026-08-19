@@ -15,7 +15,9 @@ Linear runs through Docker MCP Toolkit. Both harness configurations start
 - MCP servers load at **session start**. Changing the config or the credential does not take
   effect until you restart.
 - If tools are missing, confirm that `docker mcp gateway run` works in the harness host.
+<!-- harness:agnostic -->
 - Trust the project before Codex can load `.codex/config.toml`.
+<!-- /harness:agnostic -->
 
 ### Shared connection scope
 

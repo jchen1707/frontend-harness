@@ -28,15 +28,38 @@ pnpm test:e2e
 
 ## The workflow
 
+<!-- harness:agnostic -->
+
 Use workflow stages, not product-specific command names:
+
+<!-- /harness:agnostic -->
+<!-- harness:claude
+The stages every path runs through:
+/harness:claude -->
 
 ```
 discover → clarify → specify → split → implement → verify → review → deliver
 ```
 
+<!-- harness:agnostic -->
+
 Run the matching installed skill when one exists. Otherwise execute the stage directly from
 the contract in [`.agents/skills/delivery/SKILL.md`](.agents/skills/delivery/SKILL.md). An
 optional plugin may improve a stage, but its absence never blocks the workflow.
+
+<!-- /harness:agnostic -->
+<!-- harness:claude
+Ticket-shaped work runs the main flow, in one unbroken context:
+
+```
+/grill-with-docs  →  /to-spec  →  /to-tickets  →  /implement  →  /code-review
+```
+
+Those five are plugin skills marked `disable-model-invocation`: they do not appear in the
+agent's skill listing and only the user can run them (`/mattpocock-skills:<name>`). Absence
+from the listing means user-invocable, not missing — do not report them as nonexistent.
+Small work uses `/plan` → (new terminal) → `/implement-from-plan` instead.
+/harness:claude -->
 
 Keep discovery through splitting in one context. Record the result in
 `.agents/plans/plan.md` and `.agents/plans/test-plan.md`. Use a fresh context for each ticket
@@ -115,9 +138,19 @@ the same change, or the architectural rule passes vacuously.
 
 ## Parallel development
 
+<!-- harness:agnostic -->
+
 Worktrees are the unit of isolation. Give each writing agent a separate worktree. If the
 harness cannot guarantee isolation, keep file edits with one agent and use other agents only
 for read-only research or review.
+
+<!-- /harness:agnostic -->
+<!-- harness:claude
+Worktrees are the unit of isolation — separate checkouts mean parallel agents cannot collide
+on files. `.claude/agents/test-writer.md` sets `isolation: worktree`; add it to any subagent
+that writes. Claude Code blocks a worktree agent from redirecting git back into the main
+checkout, so the isolation actually holds.
+/harness:claude -->
 
 Reusable reviewer prompts live in `.claude/agents/` until a common agent-manifest format is
 available. Any harness may read and run those prompts; their frontmatter is only a Claude Code
@@ -145,9 +178,18 @@ signal is the whole point.
 
 ## Symbol navigation (LSP) — prefer it when available
 
+<!-- harness:agnostic -->
+
 An **LSP tool** answers questions about symbols, where text search answers questions about
 text. Use the harness LSP when available. Otherwise use `rg`, inspect definitions and
 imports, and state that the result came from text search.
+
+<!-- /harness:agnostic -->
+<!-- harness:claude
+The built-in **`LSP` tool** answers questions about **symbols**, where grep answers questions
+about **text**. It is backed by `typescript-language-server`, registered through the
+`typescript-lsp` plugin. It runs out of process and adds **no tokens** to a session.
+/harness:claude -->
 
 Use it when the question is semantic:
 
@@ -367,10 +409,23 @@ never the committed default.
 
 ## Where workflows come from
 
+<!-- harness:agnostic -->
+
 - `.agents/skills/` contains the canonical repo-owned procedures.
 - `.claude/skills/` and `.claude/commands/` adapt those procedures for Claude Code.
 - Installed plugins can implement a workflow stage, but they are optional accelerators.
 - `docs/harness-compatibility.md` defines capability discovery and fallbacks.
+  <!-- /harness:agnostic -->
+  <!-- harness:claude
+- `.claude/commands/` and `.claude/skills/` — repo-owned and `pnpm`-aware. Edit freely. The
+  names and descriptions are already in the session's skill listing; do not enumerate them
+  here.
+- **`mattpocock-skills` plugin** — declared in `.claude/settings.json`; files live under
+  `~/.claude/plugins/`. Installed from upstream's marketplace (`mattpocock/skills`), **not**
+  Anthropic's mirror, which lags a version behind. Never vendor them into the repo.
+- **`frontend-design` plugin** — the visual-design skill, enabled in `.claude/settings.json`
+  so a clone inherits it. Invoke it **at plan time**, not mid-build.
+  /harness:claude -->
 
 For visual work, use an installed design skill when available. Otherwise use the design
 fallback in the delivery skill. Tokens go in `tailwind.config.js`; a new typeface is a §14

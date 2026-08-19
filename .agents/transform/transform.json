@@ -1,0 +1,44 @@
+{
+  "pointers": {
+    ".claude/skills/delivery/SKILL.md": "../../../.agents/skills/delivery/SKILL.md",
+    ".claude/skills/loop-goal/SKILL.md": "../../../.agents/skills/loop-goal/SKILL.md",
+    ".claude/skills/preflight/SKILL.md": "../../../.agents/skills/preflight/SKILL.md",
+    ".claude/skills/prune-rules/SKILL.md": "../../../.agents/skills/prune-rules/SKILL.md",
+    ".claude/skills/search-second-brain/SKILL.md": "../../../.agents/skills/search-second-brain/SKILL.md",
+    ".claude/skills/verify/SKILL.md": "../../../.agents/skills/verify/SKILL.md"
+  },
+  "drop": [
+    ".agents",
+    ".codex",
+    ".claude/hooks/codex_session_learnings.mjs",
+    "docs/harness-compatibility.md",
+    ".github/workflows/generate-main.yml"
+  ],
+  "instructions": {
+    "from": "AGENTS.md",
+    "to": "CLAUDE.md"
+  },
+  "blocks": [],
+  "substitutions": [
+    {
+      "note": "Every reference to the canonical directory, as a path fragment.",
+      "from": ".agents/",
+      "to": ".claude/"
+    },
+    {
+      "note": "And as a path *segment* — `join(root, '.agents', 'skills')` never contains a slash.",
+      "regex": "([\"'])\\.agents\\1",
+      "to": "\\1.claude\\1"
+    },
+    {
+      "note": "Article agreement: \"an AGENTS.md\" would otherwise become \"an CLAUDE.md\". Must precede the rule below, which would consume the noun first.",
+      "regex": "\\ban(\\s+`?)AGENTS\\.md",
+      "to": "a\\1CLAUDE.md"
+    },
+    {
+      "note": "The instruction file itself, in prose and in glob patterns.",
+      "regex": "\\bAGENTS\\.md\\b",
+      "to": "CLAUDE.md"
+    }
+  ]
+}

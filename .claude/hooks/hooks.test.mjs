@@ -18,7 +18,48 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
+// harness:agnostic
 import { delimiter, dirname, join, resolve } from 'node:path';
+// /harness:agnostic
+
+// harness:agnostic
+// `main` is generated from this branch by `.agents/transform/`. The manifest names paths,
+// so it goes stale silently: a skill added here without a pointer entry is simply left as a
+// stub on `main`, telling the agent to read a file that branch does not have. The generator
+// itself is Python and only runs in the generate-main job; these checks are Node, so they
+// run everywhere the rest of the suite does — including the Windows leg.
+describe('main-branch transform manifest', () => {
+  const manifest = JSON.parse(
+    readFileSync(join(repositoryRoot, '.agents', 'transform', 'transform.json'), 'utf8'),
+  );
+
+  it('names a canonical target for every pointer stub, and the stub says so too', () => {
+    for (const [stub, target] of Object.entries(manifest.pointers)) {
+      const stubPath = join(repositoryRoot, stub);
+      expect(existsSync(stubPath), `missing stub ${stub}`).toBe(true);
+      expect(readFileSync(stubPath, 'utf8'), `${stub} does not name ${target}`).toContain(target);
+      expect(existsSync(resolve(dirname(stubPath), target)), `${stub} → missing target`).toBe(true);
+    }
+  });
+
+  it('covers every canonical skill, so a new one cannot ship as a stub on main', () => {
+    const canonical = readdirSync(join(repositoryRoot, '.agents', 'skills')).filter((name) =>
+      existsSync(join(repositoryRoot, '.agents', 'skills', name, 'SKILL.md')),
+    );
+    const covered = Object.keys(manifest.pointers).map((stub) => stub.split('/')[2]);
+    expect(covered.sort()).toEqual(canonical.sort());
+  });
+
+  it('drops only paths this branch actually has', () => {
+    for (const path of manifest.drop) {
+      expect(existsSync(join(repositoryRoot, path)), `drop: ${path} is gone`).toBe(true);
+    }
+  });
+});
+// /harness:agnostic
+// harness:claude
+// import { delimiter, dirname, join } from 'node:path';
+// /harness:claude
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
@@ -46,6 +87,7 @@ import {
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+// harness:agnostic
 function frontmatter(source) {
   const block = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
   return Object.fromEntries(
@@ -147,6 +189,7 @@ describe('harness-neutral compatibility adapters', () => {
     expect(hook.timeout).toBe(3);
   });
 });
+// /harness:agnostic
 
 describe('cross-harness tool paths', () => {
   it('reads the direct file path used by Claude file tools', () => {
@@ -190,7 +233,9 @@ describe('Stop-gate pathspec', () => {
   });
 
   it('covers the MCP configurations, which no gated path holds', () => {
+    // harness:agnostic
     expect(isGated('.codex/config.toml')).toBe(true);
+    // /harness:agnostic
     expect(isGated('.mcp.json')).toBe(true);
   });
 
@@ -336,21 +381,12 @@ describe('mcp configuration', () => {
     expect(JSON.stringify(mcp)).not.toContain('LINEAR_API_KEY');
   });
 
+  // harness:agnostic
   it('gives Codex the same Docker MCP Toolkit command', () => {
     const config = readFileSync(join(repositoryRoot, '.codex', 'config.toml'), 'utf8');
     expect(config).toContain('[mcp_servers.docker_toolkit]');
     expect(config).toContain('args = ["mcp", "gateway", "run"]');
     expect(config).not.toContain('LINEAR_API_KEY');
-  });
-
-  // The server was renamed in `.mcp.json` while `enabledMcpjsonServers` still named the
-  // old one, so the gateway was configured and never enabled. Neither file is wrong on
-  // its own; only the pair is.
-  it('enables exactly the servers it defines', () => {
-    const settings = JSON.parse(
-      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
-    );
-    expect([...settings.enabledMcpjsonServers].sort()).toEqual(Object.keys(mcp.mcpServers).sort());
   });
 
   it('gives Codex the hardened Chrome DevTools server', () => {
@@ -361,6 +397,17 @@ describe('mcp configuration', () => {
     for (const argument of chrome.args) {
       expect(config).toContain(`"${argument}"`);
     }
+  });
+  // /harness:agnostic
+
+  // The server was renamed in `.mcp.json` while `enabledMcpjsonServers` still named the
+  // old one, so the gateway was configured and never enabled. Neither file is wrong on
+  // its own; only the pair is.
+  it('enables exactly the servers it defines', () => {
+    const settings = JSON.parse(
+      readFileSync(join(repositoryRoot, '.claude', 'settings.json'), 'utf8'),
+    );
+    expect([...settings.enabledMcpjsonServers].sort()).toEqual(Object.keys(mcp.mcpServers).sort());
   });
 });
 

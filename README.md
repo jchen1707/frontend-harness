@@ -19,6 +19,7 @@ verification work out of the box.
   data fetching, config, types, styling, accessibility, performance, testing, dependency
   policy (load with `/arch`).
 - `package.json` — tool config and the approved stack.
+<!-- harness:agnostic -->
 - `.agents/skills/` — canonical repo-owned skills, including a complete delivery fallback
   that requires no external plugin.
 - `.claude/` — Claude Code adapters, optional plugins, hooks, agents, and its dynamic review
@@ -26,6 +27,12 @@ verification work out of the box.
 - `CLAUDE.md` and nested copies — thin pointers to the matching `AGENTS.md` files.
 - `docs/harness-compatibility.md` — capability mapping for skills, tools, agents, loops,
   workflows, and plugins.
+  <!-- /harness:agnostic -->
+  <!-- harness:claude
+- `.claude/` — shared Claude Code config: `settings.json` (pre-approved commands, hooks,
+  plugins), `commands/`, `skills/`, `agents/`, `workflows/`, `hooks/`. `.claude/skills/`
+  holds repo-owned skills, including a complete delivery fallback that needs no plugin.
+  /harness:claude -->
 - `docs/agents/` — how agents work with this repo: `issue-tracker.md` (Linear conventions),
   `triage-labels.md` (canonical triage roles → real label strings), `domain.md`.
 - `.out-of-scope/` — rejected feature requests, read by `/triage` to avoid re-litigating a
@@ -129,8 +136,13 @@ the two position gotchas that waste a call: `AGENTS.md` → Symbol navigation.
 
 Authenticate Linear in Docker Desktop MCP Toolkit. Enable Linear for the active profile.
 Select the **Development** workspace. Restart the active harness, then check `/mcp` for the
-Toolkit gateway and its Linear tools. Codex must trust the project before it reads
-`.codex/config.toml`.
+Toolkit gateway and its Linear tools.
+
+<!-- harness:agnostic -->
+
+Codex must trust the project before it reads `.codex/config.toml`.
+
+<!-- /harness:agnostic -->
 
 ### Second brain (optional)
 

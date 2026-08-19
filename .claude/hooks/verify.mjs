@@ -63,8 +63,10 @@ export const GATED_PATHS = ['src', 'e2e', '.claude/hooks'];
  */
 export const GATED_FILES = new Set([
   // These files configure external tools that Vitest checks.
+  // harness:agnostic
   '.codex/config.toml',
   '.codex/hooks.json',
+  // /harness:agnostic
   '.mcp.json',
   'package.json',
   'pnpm-lock.yaml',
