@@ -34,7 +34,13 @@ export default defineConfig({
     environment: './src/test/vitest-environment.ts',
     setupFiles: ['./vitest.setup.ts'],
     css: true,
-    // E2E specs are run by Playwright, not Vitest.
-    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
+    // E2E specs are run by Playwright, not Vitest. Layer A is not run by Vitest either:
+    // it is generated in the `harness` repo, verified here by sha, and carries its own
+    // suite written against `node:test` — the one runner it can rely on in a Python repo,
+    // a pnpm repo and a vendored tree no package manager has visited. Collecting it here
+    // fails with "No test suite found", because the registrations go to Node's runner
+    // rather than Vitest's. `.prettierignore` and `eslint.config.js` already exclude the
+    // same directory for the same underlying reason: nothing in it can be fixed from here.
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**', '.agents/vendor/**'],
   },
 });
