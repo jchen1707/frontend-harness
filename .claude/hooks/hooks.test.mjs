@@ -62,6 +62,29 @@ describe('main-branch transform manifest', () => {
     expect(covered.sort()).toEqual(owned.sort());
   });
 
+  // The other direction, and the one that fails silently. `vendor_sync sync` writes the
+  // vendored tree but not these stubs, so a skill added to layer A arrives here with
+  // nothing pointing at it — and a harness that discovers skills by directory simply does
+  // not have that command, with no error anywhere saying why.
+  it('gives every layer A command and skill a discoverable stub', () => {
+    const vendor = join(repositoryRoot, '.agents', 'vendor', 'harness');
+    const shared = [
+      ...readdirSync(join(vendor, 'commands')).map((file) => file.replace(/\.md$/, '')),
+      ...readdirSync(join(vendor, 'skills')).filter((name) =>
+        existsSync(join(vendor, 'skills', name, 'SKILL.md')),
+      ),
+    ];
+    expect(shared.length, 'no layer A vendored -- run vendor_sync.py sync').toBeGreaterThan(0);
+
+    const stubs = new Set(
+      readdirSync(join(repositoryRoot, '.agents', 'skills')).filter((name) =>
+        existsSync(join(repositoryRoot, '.agents', 'skills', name, 'SKILL.md')),
+      ),
+    );
+    const missing = shared.filter((name) => !stubs.has(name));
+    expect(missing, 'layer A with no stub under .agents/skills/').toEqual([]);
+  });
+
   it('gives layer A no pointer, so the plugin is the only copy on main', () => {
     const root = join(repositoryRoot, '.agents', 'skills');
     const stubs = readdirSync(root).filter(
