@@ -6,7 +6,12 @@ on:
   pull_request:
 
 jobs:
+  # The cross-platform gate: lint, types, unit tests, build. Every step here is seconds,
+  # and it is the signal that decides whether a change is sound on both operating systems.
   verify:
+    # Nothing here legitimately takes minutes. A job with no timeout inherits GitHub's
+    # 360-minute default, which is not a limit so much as an absence of one.
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -27,13 +32,62 @@ jobs:
       # The build is a gate: only it checks the browser target (es2020). Without this
       # step a build-only break surfaces in the lighthouse job, mislabelled.
       - run: pnpm build
-      # E2E is a single smoke spec — run it once (Linux) rather than per-OS.
-      - run: pnpm exec playwright install --with-deps chromium
-        if: matrix.os == 'ubuntu-latest'
+
+  # E2E is one smoke spec that runs in about four seconds. Installing the browser it needs
+  # takes minutes, and once took 28 before anyone noticed.
+  #
+  # It used to hang off the ubuntu leg of `verify`, which meant the slowest and least
+  # portable part of the suite gated the fastest and most portable part: lint, types, tests
+  # and build all passed in 34 seconds and `verify` still reported pending, because a
+  # browser download behind them had stalled. Splitting it restores that signal, and keeps
+  # the Linux-only step out of a matrix whose whole purpose is comparing two platforms.
+  e2e:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Key the cache on the resolved version rather than the `^1.50.1` range in
+      # package.json: the range does not change when the lockfile moves to a new browser
+      # build, and a stale browser against a new Playwright is the failure this avoids.
+      - name: Resolve the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache the browser binaries
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # `--with-deps` also runs apt, and apt is where the stalls happen. It stays because
+      # dropping it is a bet that the runner image ships every shared library Chromium
+      # needs — and losing that bet makes e2e flaky rather than slow. The cache removes the
+      # download half; the timeout bounds the rest. If apt keeps stalling, the next move is
+      # the official Playwright container image, whose tag must then be checked against the
+      # lockfile version resolved above.
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
       - run: pnpm test:e2e
-        if: matrix.os == 'ubuntu-latest'
+
+      # A failed e2e run currently leaves nothing behind to look at.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 
   lighthouse:
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
