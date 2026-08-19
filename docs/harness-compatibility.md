@@ -13,7 +13,7 @@ The repository contract is independent of Claude Code, Codex, or another agent h
 | This repo's agents  | `.claude/agents/*.md` prompt bodies | Claude frontmatter and workflow runner          |
 | Linear MCP          | Docker MCP Toolkit gateway          | `.mcp.json` and `.codex/config.toml`            |
 | Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`            |
-| Lifecycle hooks     | `.claude/hooks/*.mjs` scripts       | Claude settings and `.codex/hooks.json`         |
+| Lifecycle hooks     | Layer A's `hooks/*.mjs`, vendored   | Claude settings and `.codex/hooks.json`         |
 | Deterministic gates | `package.json`, Husky, and CI       | Stop hooks are an extra Claude Code layer       |
 | Shared harness half | `jchen1707/harness`, one source     | Vendored here; the plugin on `main`             |
 

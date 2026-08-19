@@ -105,15 +105,20 @@ self-critique needs image-input consent.
 
 ## What is enforced automatically
 
-Git hooks and CI are the portable enforcement layer. Claude Code also runs the convenience
-hooks in `.claude/hooks/`; other harnesses must not assume those hooks ran:
+Git hooks and CI are the portable enforcement layer. Both agent harnesses also run the
+lifecycle hooks; other harnesses must not assume those hooks ran.
 
-| Hook                                 | Effect                                                                                                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output and `.husky/_/`. Also blocks **reading** `.env` / `.env.*`, permitting `.env.example`                     |
-| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                              |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed source under `src/`, `e2e/` or `.claude/hooks/`, or changed the root tool config                        |
-| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain. Writes notes only — `python-harness` owns the indexes. Off unless `OBSIDIAN_VAULT_DIRECTORY` is set |
+The hooks are **layer A** — one Node implementation in
+[`harness`](https://github.com/jchen1707/harness), vendored under
+`.agents/vendor/harness/hooks/` and pinned by sha. They name nothing about this repo: every
+path they act on is declared under `hooks` in `harness.config.json`.
+
+| Hook                                 | Effect                                                                                                                                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `pnpm-lock.yaml`, `dist/`, generated output, `.husky/_/` and the vendored tree. Blocks **reading** `.env` / `.env.*`, permitting `.env.example`. Blocks the shell commands that reach a secret without naming a file |
+| `format_edited.mjs` (PostToolUse)    | Runs `prettier --write` on each edited file, plus `eslint --fix` on `.ts`/`.tsx`                                                                                                                                                     |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail — **only** when the turn changed gated source, or changed a file that defines the gates                                                                                                         |
+| `session_learnings.mjs` (SessionEnd) | Distils the session's mistakes-and-fixes into a note in the second brain, and rebuilds both vault indexes. Off unless `OBSIDIAN_VAULT_DIRECTORY` is set                                                                              |
 
 The Stop gate is what makes a session walk-away-able. `HARNESS_SKIP_VERIFY=1` disables it,
 and the Claude-specific `CLAUDE_SKIP_VERIFY` is kept as a legacy alias. The harness overrides
@@ -127,9 +132,10 @@ file, so a commit carrying an API key fails before it exists. `pnpm scan:secrets
 whole repo.
 
 The gated set is _code the gates check, plus the config that defines them_ — so prose, plans
-and docs still end freely and never burn override budget. Widen it by editing `GATED_PATHS` /
-`GATED_FILES` in `verify.mjs`; `.claude/hooks/hooks.test.mjs` pins the pathspec, so dropping
-an entry fails the suite rather than silently going quiet.
+and docs still end freely and never burn override budget. Widen it by editing
+`hooks.gatedPaths` / `hooks.gatedFiles` in `harness.config.json`; `tests/harness.test.mjs`
+pins them against literals, so dropping an entry fails the suite rather than silently going
+quiet.
 
 **One caveat the hooks cannot cover.** `eslint-plugin-boundaries` fails open: a file under
 `src/` that no element pattern in `eslint.config.js` classifies is simply unchecked, and
@@ -475,9 +481,12 @@ A layer above memory, in the user's own notes rather than the agent's:
   missing note is diagnosable: no log line means SessionEnd never fired (a closed terminal
   window skips it); a `failed:` line names the reason. When a session's notes matter, end it
   cleanly rather than closing the window.
-- **Index** — **not this repo's job.** `python-harness` owns both indexes and rebuilds them
-  when a session ends there. **Never add an indexer here.**
-  `/search-second-brain` explains why, and covers the resulting lag.
+- **Index** — the same hook rebuilds both indexes: `_VAULT_INDEX.md` at the vault root on
+  every session end, and `Project Learnings/_INDEX.md` when that session wrote a note. This
+  repo used to write notes and depend on a session ending in `python-harness` to index them.
+  That is over: the indexer is layer A, so every repo runs the same one and none of them owns
+  it. **Never add a local indexer** — `/search-second-brain` explains why one implementation
+  is the point.
 - **Read** — `/search-second-brain <topic>`. Read-only by design.
 
 Set `OBSIDIAN_VAULT_DIRECTORY` in **user** settings. Do not set it in this repo's committed

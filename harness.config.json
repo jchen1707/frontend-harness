@@ -53,6 +53,72 @@
       "caveat": "exits 0 far more readily than it looks. Only the accessibility assertion is `error`; performance, best-practices and SEO are `warn`, and the performance category currently scores null because the pinned Lighthouse cannot trace against the installed Chrome. A category with no score is not a pass \u2014 read the assertion output, not the exit code."
     }
   ],
+  "hooks": {
+    "gatedPaths": ["src", "e2e", "tests", ".agents/vendor/harness/hooks"],
+    "gatedFiles": [
+      "package.json",
+      "pnpm-lock.yaml",
+      "harness.config.json",
+      "tsconfig.json",
+      "eslint.config.js",
+      "vite.config.ts",
+      "vitest.setup.ts",
+      "playwright.config.ts",
+      "tailwind.config.js",
+      "postcss.config.js",
+      ".prettierrc.json",
+      ".prettierignore",
+      ".mcp.json",
+      ".claude/settings.json",
+      ".codex/config.toml",
+      ".codex/hooks.json"
+    ],
+    "gatedExtensions": [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".css"],
+    "protected": [
+      {
+        "glob": "pnpm-lock.yaml",
+        "why": "regenerate with `pnpm install`, never hand-edit"
+      },
+      {
+        "glob": "dist/**",
+        "why": "build output; change the source instead"
+      },
+      {
+        "glob": "**/generated/**",
+        "why": "generated output; change the generator instead"
+      },
+      {
+        "glob": "**/__generated__/**",
+        "why": "GraphQL codegen output; change the schema or document instead"
+      },
+      {
+        "glob": "**/*.gen.ts",
+        "why": "generated output; change the generator instead"
+      },
+      {
+        "glob": ".husky/_/**",
+        "why": "husky writes this directory; edit `.husky/pre-commit` instead"
+      },
+      {
+        "glob": ".agents/vendor/**",
+        "why": "layer A is generated and pinned by sha; edit it in the harness repo and re-sync"
+      }
+    ],
+    "secretVars": ["LINEAR_API_KEY", "GH_TOKEN"],
+    "formatters": [
+      {
+        "match": [".ts", ".tsx"],
+        "run": [
+          ["pnpm", "exec", "prettier", "--write"],
+          ["pnpm", "exec", "eslint", "--fix"]
+        ]
+      },
+      {
+        "match": [".js", ".jsx", ".mjs", ".cjs", ".json", ".css", ".html", ".md", ".yml", ".yaml"],
+        "run": [["pnpm", "exec", "prettier", "--write"]]
+      }
+    ]
+  },
   "review": {
     "agentDir": ".claude/agents",
     "checklistDir": "docs/agents/subagents",
