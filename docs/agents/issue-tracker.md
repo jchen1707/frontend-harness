@@ -1,148 +1,42 @@
-# Issue tracker: Linear
+# Issue tracker: Linear — this repo
 
-Issues, specs and tickets for this repo live in **Linear**, reached over MCP. **Pull requests
-stay on GitHub** — Linear holds the work item, GitHub holds the diff.
-
-## Connecting
-
-Linear runs through Docker MCP Toolkit. Both harness configurations start
-`docker mcp gateway run`. Docker Desktop owns the authentication and enabled-server state.
-
-- Authenticate Linear in Docker Desktop.
-- Enable Linear for the active Toolkit profile.
-- Select the **Development** workspace.
-- Check `/mcp` for the Toolkit gateway and its Linear tools.
-- MCP servers load at **session start**. Changing the config or the credential does not take
-  effect until you restart.
-- If tools are missing, confirm that `docker mcp gateway run` works in the harness host.
 <!-- harness:agnostic -->
-- Trust the project before Codex can load `.codex/config.toml`.
+
+**Shared doctrine lives in `.agents/vendor/harness/docs/agents/issue-tracker.md`** —
+connecting, tool discovery, the operation table, status sync, wayfinding, the AI-authorship
+disclaimer and the spec-correction procedure. It is vendored from
+[`harness`](https://github.com/jchen1707/harness) and pinned by sha; read it first.
+
 <!-- /harness:agnostic -->
+<!-- harness:claude
+**Shared doctrine is provided by the `harness` plugin**, at
+`${CLAUDE_PLUGIN_ROOT}/docs/agents/issue-tracker.md` — connecting, tool discovery, the
+operation table, status sync, wayfinding, the AI-authorship disclaimer and the
+spec-correction procedure. Read it first.
+/harness:claude -->
 
-### Shared connection scope
-
-Docker MCP Toolkit shares its Linear connection with every attached client. Another
-repository can change the selected workspace. Confirm **Development** before a write.
-
-Disable other Linear MCP connections. Multiple tool surfaces can target different
-workspaces, and their names do not prove the destination.
-
-### Rotating or repointing
-
-Manage authentication and workspace selection in Docker Desktop MCP Toolkit. Restart the
-agent harness after you reconnect or change the enabled server.
+This file records only what is true in **this** repo.
 
 ## Workspace and team
 
-|                    | Value                                                      |
-| ------------------ | ---------------------------------------------------------- |
-| Workspace          | **Development** (`development-jchen`)                      |
-| Team for this repo | **Frontend**, key **`FRO`** — issues read `FRO-123`        |
-| Sibling team       | **Backend**, key `BAC` — not this repo's; do not file here |
+|                    | Value                                                         |
+| ------------------ | ------------------------------------------------------------- |
+| Workspace          | **Development** (`development-jchen`)                         |
+| Team for this repo | **Frontend**, key **`FRO`** — issues read `FRO-123`           |
+| Sibling team       | **Backend**, key `BAC` — `python-harness` files there, not us |
 
-The team key is the issue-id prefix, and `/code-review` resolves a ticket from it, so a
-branch named with the wrong prefix silently loses its spec axis.
+Name branches `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`). The Spec axis
+of a review resolves the ticket from that prefix, so a branch named with the wrong one
+silently loses the axis. When there is no ticket, it falls back to `.agents/plans/plan.md`.
 
-Note the key is **not** returned by the MCP `get_team` tool — it exposes id, name, icon and
-timestamps only. Read it from Linear's GraphQL API (`{ teams { nodes { key name } } }`,
-authenticating with the same personal key) or from any issue id in the UI.
-
-## Discovering the tools
-
-**List the tools before first use rather than assuming names.** The surface changes between
-releases. The tool prefix depends on the harness and the server name.
-
-`/mcp` shows the connected servers and their tools. Match the operation you need from the
-table below to what is actually offered.
-
-## Conventions
-
-| Operation               | What to call                                                                                              |
-| ----------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Create an issue**     | the create-issue tool — needs `team`; set `title`, `description` (markdown), optional `labels`, `project` |
-| **Read an issue**       | the get-issue tool, with the identifier (`FRO-123`)                                                       |
-| **List issues**         | the list-issues tool — filter by `team`, `state`, `assignee`, `label`                                     |
-| **Comment**             | the create-comment tool, with the issue id and markdown `body`                                            |
-| **Apply/remove labels** | the update-issue tool, setting the `labels` array                                                         |
-| **Change state**        | the update-issue tool, with the target workflow state                                                     |
-| **Close**               | move to the team's Done/Cancelled state — Linear has no separate close verb                               |
-
-Issue identifiers are `TEAM-NUMBER` (e.g. `FRO-4521`), not bare integers. A reference like
-`#42` in conversation is **not** a Linear id — ask which team it belongs to rather than
-guessing. `#42` in this repo's conversation usually means a GitHub PR.
-
-## Status sync — the issue state must track the work
-
-Nothing moves an issue automatically, and a session can end before a cleanup step runs. So
-each transition happens **in the same turn as the git action that causes it**, not at the end
-of the session. FRO-5 shipped a whole implementation and an open PR while the issue sat in
-Todo — that is the failure this table prevents.
-
-| Moment                       | Action                                                                                                                |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Branch created for `FRO-n`   | Move the issue to **In Progress**                                                                                     |
-| PR opened                    | Move to **In Review**; attach the PR URL to the issue (create-attachment tool); comment with the PR link and evidence |
-| PR merged                    | Move to **Done**                                                                                                      |
-| Work abandoned or superseded | Move to **Cancelled**, with a comment naming the successor                                                            |
-
-A parent issue follows its children: the first child in progress moves the parent to
-**In Progress**; the last child done moves it to **Done**.
-
-### Make it mechanical: Linear's GitHub integration
-
-The table above is doctrine, and doctrine can be skipped. Linear's own GitHub integration
-does most of it deterministically — install it once (Linear → Settings → Integrations →
-GitHub, a human action; an agent cannot do it) and:
-
-- A branch named `feat/FRO-<num>-<slug>` links the PR to the issue automatically.
-- "Fixes FRO-123" in the PR description moves the issue to **In Review** when the PR opens
-  and **Done** when it merges, and attaches the PR.
-
-Once installed, the agent's remaining manual duties shrink to: the **In Progress** move at
-branch creation, the evidence comment, and the parent rollup. Until it is installed, the
-whole table is manual — do not assume the automation exists; check the issue actually moved.
-
-## Labels vs workflow states
-
-Linear separates **workflow state** (Backlog / Todo / In Progress / Done — a single value that
-drives the board) from **labels** (many per issue). The five canonical triage roles in
-`triage-labels.md` are **labels**, not states. Applying `ready-for-agent` does not move the
-issue across the board; set the state explicitly when the role implies one.
-
-## When a skill says "publish to the issue tracker"
-
-Create a Linear issue in the **Frontend** team (`FRO`). Put the spec in the issue
-`description` as markdown. If the skill produced a document longer than fits comfortably, put the summary and
-acceptance criteria in the description and link the full document.
-
-## When a skill says "fetch the relevant ticket"
-
-Get the issue by identifier, then read its comments for the discussion.
-
-## Wayfinding operations
-
-Used by `/wayfinder`. The **map** is one issue; **tickets** are its children.
-
-- **Map** — an issue labelled `wayfinder:map` holding the Notes / Decisions-so-far / Fog body.
-- **Child ticket** — a Linear **sub-issue** of the map (`parent` field), labelled
-  `wayfinder:<type>` (`research` / `prototype` / `grilling` / `task`).
-- **Blocking** — Linear has native issue relations: use the **blocks / blocked-by** relation
-  rather than a text convention. A ticket is unblocked when every blocker reaches a completed
-  state.
-- **Frontier query** — the map's sub-issues that are not Done, have no unresolved blocked-by
-  relation, and no assignee; first in map order wins.
-- **Claim** — assign the issue to the current user; this is the session's first write.
-- **Resolve** — comment the answer, move to Done, then append a pointer to the map's
-  Decisions-so-far.
+`#42` in this repo's conversation usually means a GitHub PR, not a Linear id.
 
 ## Repo-specific notes
 
 - The **Standards** axis of `/code-review` reads `docs/architecture.md` (authoritative), the
-  summary in `AGENTS.md`, and the nested `AGENTS.md` for whichever directory the diff touches.
-  Those override the skill's generic smell baseline.
-- The **Spec** axis resolves the originating ticket from the Linear id in the branch name or
-  commit trailer. Name branches `<type>/FRO-<num>-<slug>` (e.g. `feat/FRO-412-search-filters`)
-  so the link is mechanical. When there is no ticket, it falls back to `.agents/plans/plan.md`.
-- Definition of Done lives in `AGENTS.md`; the `verify` skill runs those gates and prints evidence.
-- Nine axes instead of two: `.claude/workflows/full-review.js`, run with `/workflows`. That is
-  real spend — reach for it when the diff warrants it, not by default.
+  summary in `AGENTS.md`, and the nested `AGENTS.md` for whichever directory the diff
+  touches. Those override the skill's generic smell baseline.
+- Definition of Done lives in `AGENTS.md`; the `verify` skill runs those gates and prints
+  evidence.
+- Nine axes instead of two: `.claude/workflows/full-review.js`, run with `/workflows`. That
+  is real spend — reach for it when the diff warrants it, not by default.

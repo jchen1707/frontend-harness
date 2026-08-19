@@ -13,17 +13,24 @@ of them.
 
 ## The rule files
 
-| File                        | Scope                                                   |
-| --------------------------- | ------------------------------------------------------- |
-| `AGENTS.md`                 | Root. Loaded every session.                             |
-| `docs/architecture.md`      | Cross-cutting standards only.                           |
-| `src/*/AGENTS.md`           | Per-layer conventions, path-scoped.                     |
-| `src/features/AGENTS.md`    | The slice contract: `ui` / `services` / `repositories`. |
-| `e2e/AGENTS.md`             | E2E conventions.                                        |
-| `docs/agents/*.md`          | Tracker, triage and domain conventions.                 |
-| `.claude/agents/*.md`       | Subagent definitions, also the `full-review` axes.      |
-| `.agents/skills/*/SKILL.md` | Repo-owned skills — including this one.                 |
-| `.claude/commands/*.md`     | Repo-owned commands.                                    |
+| File                     | Scope                                                   |
+| ------------------------ | ------------------------------------------------------- |
+| `AGENTS.md`              | Root. Loaded every session.                             |
+| `docs/architecture.md`   | Cross-cutting standards only.                           |
+| `src/*/AGENTS.md`        | Per-layer conventions, path-scoped.                     |
+| `src/features/AGENTS.md` | The slice contract: `ui` / `services` / `repositories`. |
+| `e2e/AGENTS.md`          | E2E conventions.                                        |
+| `docs/agents/*.md`       | Tracker, triage and domain — the repo-specific half.    |
+
+<!-- harness:agnostic -->
+
+| `.agents/vendor/harness/**` | **Generated. Never prune here** — edit it in `harness`. |
+
+<!-- /harness:agnostic -->
+
+| `.claude/agents/*.md` | Subagent definitions, also the `full-review` axes. |
+| `.agents/skills/*/SKILL.md` | Repo-owned skills — including this one. |
+| `.claude/commands/*.md` | Repo-owned commands. |
 
 **Glob the tree, do not trust this table.** It is itself a rule file and can go stale; an
 audit that reads only the paths listed here will miss whatever moved since it was written.

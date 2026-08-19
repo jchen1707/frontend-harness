@@ -12,6 +12,32 @@ The repository contract is independent of Claude Code, Codex, or another agent h
 | Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`        |
 | Lifecycle hooks     | `.claude/hooks/*.mjs` scripts       | Claude settings and `.codex/hooks.json`     |
 | Deterministic gates | `package.json`, Husky, and CI       | Stop hooks are an extra Claude Code layer   |
+| Shared harness half | `jchen1707/harness`, one source     | Vendored here; the plugin on `main`         |
+
+## The shared half arrives through an adapter too
+
+The stack-neutral content — tracker conventions, the triage mapping, domain-doc rules,
+secret doctrine — is owned once in [`harness`](https://github.com/jchen1707/harness) and
+reaches this repo the same way everything else does: through whichever adapter the harness
+understands.
+
+| Harness                  | How it arrives                                                    |
+| ------------------------ | ----------------------------------------------------------------- |
+| Claude Code              | The `harness` plugin, resolved via `${CLAUDE_PLUGIN_ROOT}`        |
+| Codex, and anything else | Vendored into `.agents/vendor/harness/`, pinned by sha, committed |
+
+This branch takes the vendored path, so nothing here depends on a Claude Code mechanism.
+The plugin would make `v2` Claude-only in everything but name, which is the opposite of
+what this document is for.
+
+**A submodule is not a third option.** `git worktree add` does not populate one — no error,
+no warning, just an empty directory — and this repo runs worktree-per-ticket. Vendored
+files are ordinary tracked content, so a worktree and a sandbox both materialise them.
+
+Vendoring's cost is staleness, and the answer is to make staleness loud rather than to
+pretend there is no copy: `.github/workflows/vendor-freshness.yml` fails the build when the
+vendored tree has been hand-edited or the pin has fallen behind. **Never edit
+`.agents/vendor/harness/` here** — it is generated, and the next sync overwrites it.
 
 ## Capability discovery
 

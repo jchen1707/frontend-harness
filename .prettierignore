@@ -7,3 +7,8 @@ pnpm-lock.yaml
 # harness:agnostic
 .codex/*.toml
 # /harness:agnostic
+
+# Layer A is generated from the `harness` repo and verified by sha. Reformatting it here
+# would break that check on every sync, and the fix belongs upstream anyway: the plugin
+# owns its own formatting.
+.agents/vendor/

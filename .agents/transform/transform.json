@@ -12,13 +12,21 @@
     ".codex",
     ".claude/hooks/codex_session_learnings.mjs",
     "docs/harness-compatibility.md",
-    ".github/workflows/generate-main.yml"
+    ".github/workflows/generate-main.yml",
+    ".github/workflows/vendor-freshness.yml"
   ],
   "instructions": {
     "from": "AGENTS.md",
     "to": "CLAUDE.md"
   },
-  "blocks": [],
+  "blocks": [
+    {
+      "note": "Layer A reaches this repo two ways, and never both at once. On v2 it is the vendored tree under .agents/vendor/harness, which the .agents drop removes here; on main it is the plugin, which nothing else in the tree would enable.",
+      "file": ".claude/settings.json",
+      "from": "  \"enabledPlugins\": {\n    \"mattpocock-skills@claude-plugins-official\": true,\n",
+      "to": "  \"enabledPlugins\": {\n    \"harness@harness\": true,\n    \"mattpocock-skills@claude-plugins-official\": true,\n"
+    }
+  ],
   "substitutions": [
     {
       "note": "Every reference to the canonical directory, as a path fragment.",
