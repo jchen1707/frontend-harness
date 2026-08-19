@@ -4,4 +4,6 @@ playwright-report
 test-results
 .lighthouseci
 pnpm-lock.yaml
+# harness:agnostic
 .codex/*.toml
+# /harness:agnostic
