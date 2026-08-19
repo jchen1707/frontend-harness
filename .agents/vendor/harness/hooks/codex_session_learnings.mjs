@@ -11,16 +11,14 @@
  * detached child in a new session, and exit. The child outlives Codex's timeout and the
  * terminating session both, and writes the note on its own schedule.
  *
- * Never blocks. Every failure path exits 0 — a second brain that cannot be written is not
- * a reason to interfere with ending a session. This mirrors
- * `python-harness/.agents/hooks/codex_session_learnings.py`; the pair collapses into one
- * implementation when the hooks move into the shared harness plugin.
+ * Never blocks. Every failure path exits 0 — a second brain that cannot be written is not a
+ * reason to interfere with ending a session.
  */
 
 import { spawn } from 'node:child_process';
+import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 
 import { readPayload } from './lib.mjs';
 

@@ -243,12 +243,16 @@ not available. Both paths produce the same plans, tests, review evidence, and PR
 
 ## What runs without being asked
 
-| Hook                                 | Effect                                                                                            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------- |
-| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `.env`, `pnpm-lock.yaml`, `dist/`, generated output                               |
-| `format_edited.mjs` (PostToolUse)    | Prettier on each edited file; ESLint `--fix` on `.ts`/`.tsx`                                      |
-| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                          |
-| `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain (notes only — `python-harness` owns the indexes) |
+One implementation, shared with `python-harness` and vendored here from
+[`harness`](https://github.com/jchen1707/harness). What each one acts on is declared under
+`hooks` in `harness.config.json`.
+
+| Hook                                 | Effect                                                                                    |
+| ------------------------------------ | ----------------------------------------------------------------------------------------- |
+| `protect_paths.mjs` (PreToolUse)     | Blocks edits to `pnpm-lock.yaml`, `dist/` and generated output; blocks reads of `.env`    |
+| `format_edited.mjs` (PostToolUse)    | Prettier on each edited file; ESLint `--fix` on `.ts`/`.tsx`                              |
+| `verify.mjs` (Stop)                  | Blocks the turn while the gates fail, when the turn touched gated source                  |
+| `session_learnings.mjs` (SessionEnd) | Writes the session's lessons to the second brain and rebuilds both of the vault's indexes |
 
 Claude Code's Stop gate makes its sessions walk-away-able. `HARNESS_SKIP_VERIFY=1` disables
 that adapter for a session; `CLAUDE_SKIP_VERIFY` remains as a legacy alias. Other harnesses
