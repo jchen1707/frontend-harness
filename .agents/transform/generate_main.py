@@ -88,8 +88,11 @@ def copy_tracked(source: Path, destination: Path) -> bool:
     """
     if not (source / ".git").exists():
         return False
-    listing = subprocess.run(
-        ["git", "-C", str(source), "ls-files", "-z"],
+    # `git` resolves from PATH, and every argument is either a literal or the path this
+    # script was handed, so there is no untrusted input to inject. An absolute executable
+    # path would not survive the Windows leg of the frontend harness's CI.
+    listing = subprocess.run(  # noqa: S603
+        ["git", "-C", str(source), "ls-files", "-z"],  # noqa: S607
         capture_output=True,
         check=True,
     )
@@ -182,10 +185,9 @@ def materialise_pointers(root: Path, expected: dict[str, str]) -> None:
             )
         resolved = (pointer.parent / target).resolve()
         if not resolved.is_file():
-            raise TransformError(
-                f"{pointer_path} points at {target!r}, which does not exist"
-            )
+            raise TransformError(f"{pointer_path} points at {target!r}, which does not exist")
         shutil.copy2(resolved, pointer)
+
 
 # Harness-specific regions are marked in the source, in whatever comment syntax the file
 # uses. Two kinds, and they are not symmetrical:
