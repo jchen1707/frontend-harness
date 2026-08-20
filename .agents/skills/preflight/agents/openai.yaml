@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Preflight'
+  short_description: 'Check the process gates the code gates cannot see, before opening a PR'
+  default_prompt: 'Use $preflight to check this branch is ready to ship, and produce the Evidence scorecard.'

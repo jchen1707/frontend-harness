@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Delivery'
+  short_description: "Run this repo's delivery workflow when no installed equivalent exists"
+  default_prompt: 'Use $delivery to take this work from request to reviewed change.'
