@@ -102,6 +102,10 @@
       {
         "glob": ".agents/vendor/**",
         "why": "layer A is generated and pinned by sha; edit it in the harness repo and re-sync"
+      },
+      {
+        "glob": ".factory/**",
+        "why": "the factory's own run scaffolding; kept out of every product diff by the global gitignore"
       }
     ],
     "secretVars": ["LINEAR_API_KEY", "GH_TOKEN"],
@@ -120,12 +124,13 @@
     ]
   },
   "review": {
-    "agentDir": ".claude/agents",
+    "agentDir": ".agents/agents",
     "checklistDir": "docs/agents/subagents",
     "ninthAxis": {
       "label": "a11y",
       "agent": "a11y-reviewer"
     },
     "styleEnforcedBy": "ESLint, Prettier or tsc"
-  }
+  },
+  "tests": ["tests", "e2e", "src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.spec.ts"]
 }
