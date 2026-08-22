@@ -16,6 +16,7 @@ export default tseslint.config(
       'playwright-report',
       'test-results',
       '.lighthouseci',
+      'public/mockServiceWorker.js',
       // Layer A is generated from the `harness` repo and verified by sha. Linting it
       // here would report on a file nobody can fix from this repo, and any fix applied
       // anyway would break the freshness check on the next sync. `.prettierignore`
