@@ -29,6 +29,20 @@ Then choose the **React / GoF design pattern(s)** for the feature and justify th
 
 The agent must state the chosen pattern and _why_ during planning.
 
+### Recorded choices per feature
+
+| Feature    | Style         | Patterns                               | Notes                                                |
+| ---------- | ------------- | -------------------------------------- | ---------------------------------------------------- |
+| `health`   | Layered slice | Custom hooks                           | The worked example for the slice contract            |
+| `projects` | Layered slice | Custom hooks, container/presentational | Filter state lives in the URL, so no reducer (FRO-1) |
+
+**`projects` — why.** The service hook `useProjects` owns fetching, filtering and sorting. The
+route component calls it and a presentational table renders the result, which is what makes the
+six view states testable one at a time. The feature uses **no reducer**: search text and status
+live in the URL through `useSearchParams`, so no multi-field client state remains for a reducer
+to hold. Read that "no" as a decision, not an omission. See `docs/adr/0001` and `docs/adr/0002`
+for the data-source and pagination decisions behind it.
+
 ---
 
 ## §1 The dependency rule — stated once, applies fractally

@@ -21,7 +21,12 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   const onAbort = (): void => {
     controller.abort();
   };
-  signal?.addEventListener('abort', onAbort, { once: true });
+
+  if (signal?.aborted) {
+    controller.abort();
+  } else {
+    signal?.addEventListener('abort', onAbort, { once: true });
+  }
 
   try {
     const init: RequestInit = {

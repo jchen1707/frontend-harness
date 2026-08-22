@@ -13,6 +13,12 @@ const envSchema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  // Off by default so a production build does not register the mock worker.
+  // Turn on for local development against the browser worker.
+  VITE_MOCK_API: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;
