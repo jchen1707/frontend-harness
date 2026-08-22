@@ -14,11 +14,11 @@ import { server } from '@/test/msw/server';
 import { type Project } from '../services/useProjects';
 import { ProjectsPage } from './ProjectsPage';
 
-function makeWrapper(): (props: { children: ReactNode }) => JSX.Element {
+function makeWrapper(initialEntry = '/projects'): (props: { children: ReactNode }) => JSX.Element {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return function Wrapper({ children }: { children: ReactNode }): JSX.Element {
     return (
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[initialEntry]}>
         <QueryClientProvider client={client}>{children}</QueryClientProvider>
       </MemoryRouter>
     );
@@ -54,6 +54,61 @@ describe('ProjectsPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('table')).toBeInTheDocument();
     });
+  });
+
+  it('filters Projects by name without requesting them again', async () => {
+    const listProjects = vi.fn().mockResolvedValue(defaultProjects);
+    render(<ProjectsPage repository={{ listProjects }} />, { wrapper: makeWrapper() });
+
+    const searchBox = await screen.findByRole('searchbox', { name: 'Search projects' });
+    await userEvent.type(searchBox, '2');
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Project 2' })).toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Project 1' })).not.toBeInTheDocument();
+    });
+    expect(listProjects).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores a URL search and offers a control that clears a no-match result', async () => {
+    const repository = { listProjects: () => Promise.resolve(defaultProjects) };
+    render(<ProjectsPage repository={repository} />, {
+      wrapper: makeWrapper('/projects?q=missing'),
+    });
+
+    expect(screen.getByRole('searchbox', { name: 'Search projects' })).toHaveValue('missing');
+    expect(await screen.findByText('No projects match your search.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Project 1' })).toBeInTheDocument();
+    });
+  });
+
+  it('announces only the settled result count in a hidden status region', async () => {
+    const repository = { listProjects: () => Promise.resolve(defaultProjects) };
+    render(<ProjectsPage repository={repository} />, { wrapper: makeWrapper() });
+
+    const status = screen.getByRole('status');
+    await waitFor(() => {
+      expect(status).toHaveTextContent('2 projects found.');
+    });
+    expect(screen.getByRole('table')).not.toContainElement(status);
+
+    const announcements: string[] = [];
+    const observer = new MutationObserver(() => {
+      announcements.push(status.textContent);
+    });
+    observer.observe(status, { childList: true, characterData: true, subtree: true });
+
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Search projects' }), '2x');
+    await waitFor(() => {
+      expect(status).toHaveTextContent('0 projects found.');
+    });
+    observer.disconnect();
+
+    expect(announcements).toEqual(['0 projects found.']);
   });
 
   it('shows the empty state', async () => {

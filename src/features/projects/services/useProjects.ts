@@ -1,6 +1,6 @@
 // Service layer (feature-internal): business logic + data hooks composing
 // the feature's own repositories. UI → services → repositories → core.
-import { useEffect, useRef } from 'react';
+import { useDeferredValue, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 import { ValidationError } from '@/core/errors';
@@ -16,12 +16,14 @@ export type ProjectsErrorKind = 'transport' | 'schema';
 
 export interface UseProjectsOptions {
   repository?: ProjectsRepository | undefined;
+  searchText?: string | undefined;
 }
 
 export interface UseProjectsResult {
   projects: Project[];
   isPending: boolean;
   isRefetching: boolean;
+  isSearchPending: boolean;
   errorKind: ProjectsErrorKind | null;
   refetch: () => Promise<unknown>;
 }
@@ -35,7 +37,9 @@ function toErrorKind(error: Error): ProjectsErrorKind {
 }
 
 export function useProjects(options: UseProjectsOptions = {}): UseProjectsResult {
-  const { repository = defaultRepository } = options;
+  const { repository = defaultRepository, searchText = '' } = options;
+  const normalizedSearchText = searchText.trim().toLocaleLowerCase();
+  const deferredSearchText = useDeferredValue(normalizedSearchText);
 
   const { data, isPending, isFetching, error, refetch } = useQuery({
     queryKey: ['projects'],
@@ -43,6 +47,7 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsResult
     select: (allProjects) =>
       allProjects
         .filter((project) => project.status !== 'archived')
+        .filter((project) => project.name.toLocaleLowerCase().includes(deferredSearchText))
         .sort((a, b) => b.lastUpdatedAt.localeCompare(a.lastUpdatedAt)),
   });
 
@@ -70,6 +75,7 @@ export function useProjects(options: UseProjectsOptions = {}): UseProjectsResult
     projects: data ?? [],
     isPending,
     isRefetching,
+    isSearchPending: normalizedSearchText !== deferredSearchText,
     errorKind,
     refetch,
   };
