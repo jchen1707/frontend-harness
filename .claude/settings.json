@@ -80,7 +80,16 @@
     "harness@harness": true,
     "mattpocock-skills@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true
+    "frontend-design@claude-plugins-official": true,
+    "pstack@pstack-claude": true
+  },
+  "extraKnownMarketplaces": {
+    "pstack-claude": {
+      "source": {
+        "source": "github",
+        "repo": "michael-denyer/pstack-claude"
+      }
+    }
   },
   "plansDirectory": ".claude/plans",
   "enabledMcpjsonServers": ["chrome-devtools", "docker-toolkit"]
