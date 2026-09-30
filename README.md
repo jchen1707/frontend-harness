@@ -158,11 +158,10 @@ Set `OBSIDIAN_VAULT_DIRECTORY` in your **user** settings. Do not set it in this 
 committed `.claude/settings.json`. The SessionEnd hook writes dated notes to the vault's
 `Project Learnings` directory.
 
-**This harness writes notes; it does not index them.** `python-harness` owns
-`_VAULT_INDEX.md` and `Project Learnings/_INDEX.md` and rebuilds both when a session ends
-there — one indexer, so there is no second copy to drift. The trade is that notes written
-here do not appear in either index until you next end a session in `python-harness`;
-`/search-second-brain` greps the vault as well as reading the indexes to cover the gap.
+**Each configured harness writes notes and rebuilds both indexes.** Layer A's
+`session_learnings.mjs` rebuilds `_VAULT_INDEX.md` after every eligible session and
+`Project Learnings/_INDEX.md` after each session that writes a note.
+`/search-second-brain` uses the indexes and can search the vault directly.
 
 ## The SDLC
 

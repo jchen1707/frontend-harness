@@ -16,28 +16,20 @@ Read it first.
 
 This file records only what is true in **this** repo.
 
-## This repo writes notes. It does not index them.
+## Both indexes are rebuilt by shared code
 
-`python-harness` owns `_VAULT_INDEX.md` and `Project Learnings/_INDEX.md`, and rebuilds them
-when a session ends **there**.
+`session_learnings.mjs` and `vault_index.mjs` are layer A. They run from
+`.agents/vendor/harness/hooks/`.
 
-So every note written from a frontend session since the last `python-harness` session is
-missing from both indexes — including notes you can plainly see in the folder. **The shared
-skill's grep step is not optional here.** Skipping it turns "the vault has nothing on this"
-into a confident falsehood.
+| Index                          | Covers                                | Rebuilt                                              |
+| ------------------------------ | ------------------------------------- | ---------------------------------------------------- |
+| `_VAULT_INDEX.md` (vault root) | every note in the vault               | every eligible session end with the vault configured |
+| `Project Learnings/_INDEX.md`  | the auto-distilled session notes only | each session that writes a note                      |
 
-If a stretch of frontend-only work has made the index old, run the indexer in
-`python-harness`.
+The shared hook rebuilds both indexes after it processes an eligible session. The former
+cross-repository indexing lag is gone.
 
-## Do not fix this by adding an indexer here
-
-This repo shipped a port of `vault_index.py` for exactly one day. In that time the pair
-re-diverged on a header line inside a single fix cycle — with only one side under test,
-because neither repo's suite can see the other's output. Tests can pin a contract between two
-implementations; they cannot stop the two from disagreeing about what a description should
-say.
-
-The asymmetry closes when the writer and the indexer move into layer A, where there is one
-implementation and no pair to diverge. Until then it is a stated cost, not an open bug.
+`distil_backlog.mjs` recovers sessions that did not fire `SessionEnd`. It uses the same
+shared index code.
 
 Never write either index file by hand.
