@@ -16,28 +16,10 @@ Read it first.
 
 This file records only what is true in **this** repo.
 
-## This repo writes notes. It does not index them.
+## Session-end indexing
 
-`python-harness` owns `_VAULT_INDEX.md` and `Project Learnings/_INDEX.md`, and rebuilds them
-when a session ends **there**.
+The shared SessionEnd hook writes the session note and rebuilds `_VAULT_INDEX.md` in every
+repository. When it writes a note, it also rebuilds `Project Learnings/_INDEX.md`.
 
-So every note written from a frontend session since the last `python-harness` session is
-missing from both indexes — including notes you can plainly see in the folder. **The shared
-skill's grep step is not optional here.** Skipping it turns "the vault has nothing on this"
-into a confident falsehood.
-
-If a stretch of frontend-only work has made the index old, run the indexer in
-`python-harness`.
-
-## Do not fix this by adding an indexer here
-
-This repo shipped a port of `vault_index.py` for exactly one day. In that time the pair
-re-diverged on a header line inside a single fix cycle — with only one side under test,
-because neither repo's suite can see the other's output. Tests can pin a contract between two
-implementations; they cannot stop the two from disagreeing about what a description should
-say.
-
-The asymmetry closes when the writer and the indexer move into layer A, where there is one
-implementation and no pair to diverge. Until then it is a stated cost, not an open bug.
-
-Never write either index file by hand.
+One layer-A implementation owns these indexes. Do not add a local indexer or edit either
+index file by hand.

@@ -10,7 +10,7 @@ The repository contract is independent of Claude Code, Codex, or another agent h
 | Workflow state      | `.agents/plans/`                    | A harness may expose its own UI or commands     |
 | Reviewer frames     | `harness`, one source               | Vendored under `.agents/vendor/harness/agents/` |
 | Reviewer checklists | `docs/agents/subagents/*.md`        | Read alongside the frame, in that order         |
-| This repo's agents  | `.claude/agents/*.md` prompt bodies | Claude frontmatter and workflow runner          |
+| This repo's agents  | `.agents/agents/*.md` prompt bodies | Claude adapter symlinks and workflow runner     |
 | Linear MCP          | Docker MCP Toolkit gateway          | `.mcp.json` and `.codex/config.toml`            |
 | Chrome DevTools MCP | Hardened command flags              | `.mcp.json` and `.codex/config.toml`            |
 | Lifecycle hooks     | Layer A's `hooks/*.mjs`, vendored   | Claude settings and `.codex/hooks.json`         |

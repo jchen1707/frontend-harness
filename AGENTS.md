@@ -170,7 +170,7 @@ reviews on general advice and reports a confident clean.
 - **Shared frames** — `.agents/vendor/harness/agents/` (the plugin, on `main`). Never edited
   here; edit them in [`harness`](https://github.com/jchen1707/harness) and re-sync.
 - **This repo's half** — `docs/agents/subagents/`.
-- **This repo's own agents** — `.claude/agents/`: `a11y-reviewer`, the ninth axis, and
+- **This repo's agents** — `.agents/agents/`: `a11y-reviewer`, the ninth axis, and
   `test-writer`, which is here because it writes and so its tool grant names a runner.
 
 Any harness may read and run those prompts; their frontmatter is only a Claude Code adapter.
