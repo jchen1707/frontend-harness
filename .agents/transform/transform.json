@@ -1,4 +1,7 @@
 {
+  "symlinks": {
+    ".claude/agents": "../.agents/agents"
+  },
   "pointers": {
     ".claude/skills/delivery/SKILL.md": "../../../.agents/skills/delivery/SKILL.md",
     ".claude/skills/preflight/SKILL.md": "../../../.agents/skills/preflight/SKILL.md"

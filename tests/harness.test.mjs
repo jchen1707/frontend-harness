@@ -172,6 +172,23 @@ describe('main-branch transform manifest', () => {
     expect(shadowing, 'layer A stubs with a pointer would shadow the plugin').toEqual([]);
   });
 
+  // A tracked symlink into `.agents/` dangles on `main`, which drops `.agents/`, unless the
+  // manifest materialises it. Read from the index so the check holds on a checkout that
+  // wrote links as text files.
+  it('materialises every tracked symlink, so none dangles on main', () => {
+    const git = (...args) =>
+      spawnSync('git', args, { cwd: repositoryRoot, encoding: 'utf8', windowsHide: true }).stdout;
+    const links = Object.fromEntries(
+      git('ls-files', '-s')
+        .split('\n')
+        .filter((line) => line.startsWith('120000 '))
+        .map((line) => line.split('\t')[1])
+        .map((path) => [path, git('cat-file', '-p', `:${path}`)]),
+    );
+    expect(Object.keys(links).length, 'no tracked symlinks found').toBeGreaterThan(0);
+    expect(manifest.symlinks ?? {}).toEqual(links);
+  });
+
   it('drops only paths this branch actually has', () => {
     for (const path of manifest.drop) {
       expect(existsSync(join(repositoryRoot, path)), `drop: ${path} is gone`).toBe(true);
