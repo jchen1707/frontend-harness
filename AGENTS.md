@@ -447,8 +447,8 @@ never the committed default.
 - `.agents/skills/` holds this repo's own procedures — `delivery`, `preflight` — plus one
   thin stub per shared command and skill, because a harness that discovers skills by
   directory does not glob the vendored tree. A stub is an address, not a copy.
-- `.claude/skills/` adapts only the repo-owned ones. A shared skill must have no adapter:
-  on `main` the plugin supplies it, and a pointer would materialise a shadowing duplicate.
+- `.claude/skills` is a symlink to `.agents/skills/`, so Claude Code discovers the same set.
+  On `main` the generator drops every stub, because the plugin supplies the shared skills.
 - Installed plugins can implement a workflow stage, but they are optional accelerators.
 - `docs/harness-compatibility.md` defines capability discovery and fallbacks.
   <!-- /harness:agnostic -->

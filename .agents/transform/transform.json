@@ -1,10 +1,7 @@
 {
   "symlinks": {
-    ".claude/agents": "../.agents/agents"
-  },
-  "pointers": {
-    ".claude/skills/delivery/SKILL.md": "../../../.agents/skills/delivery/SKILL.md",
-    ".claude/skills/preflight/SKILL.md": "../../../.agents/skills/preflight/SKILL.md"
+    ".claude/agents": "../.agents/agents",
+    ".claude/skills": "../.agents/skills"
   },
   "drop": [
     ".agents",
@@ -12,7 +9,23 @@
     "docs/harness-compatibility.md",
     "tests/harness.test.mjs",
     ".github/workflows/generate-main.yml",
-    ".github/workflows/vendor-freshness.yml"
+    ".github/workflows/vendor-freshness.yml",
+    ".claude/skills/arch",
+    ".claude/skills/context",
+    ".claude/skills/delivery/agents",
+    ".claude/skills/full-review",
+    ".claude/skills/implement-from-plan",
+    ".claude/skills/lint",
+    ".claude/skills/loop-goal",
+    ".claude/skills/new-project",
+    ".claude/skills/plan",
+    ".claude/skills/preflight/agents",
+    ".claude/skills/prune-rules",
+    ".claude/skills/retro",
+    ".claude/skills/run",
+    ".claude/skills/search-second-brain",
+    ".claude/skills/test",
+    ".claude/skills/verify"
   ],
   "instructions": {
     "from": "AGENTS.md",

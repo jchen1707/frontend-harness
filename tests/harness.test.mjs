@@ -98,16 +98,15 @@ describe('the shared hooks', () => {
 });
 
 // `main` is generated from this branch by `.agents/transform/`. The manifest names paths,
-// so it goes stale silently: a skill added here without a pointer entry is simply left as a
-// stub on `main`, telling the agent to read a file that branch does not have. The generator
-// itself is Python and only runs in the generate-main job; these checks are Node, so they
-// run everywhere the rest of the suite does — including the Windows leg.
-// `.agents/skills/` holds two kinds of directory now. A **repo-owned** skill has its body
-// here and needs a `.claude/skills` pointer so Claude Code sees it. A **layer A stub** is an
-// address: one line pointing into the vendored tree, present only so a harness that
-// discovers skills by directory can find the shared one. On `main` the plugin supplies the
-// real thing, so a stub must have no pointer at all — one would materialise a second copy
-// under the same name, and nothing would say which of the two answers.
+// so it goes stale silently. The generator itself is Python and only runs in the
+// generate-main job; these checks are Node, so they run everywhere the rest of the suite
+// does — including the Windows leg.
+// `.agents/skills/` holds two kinds of directory, and `.claude/skills` links to all of it. A
+// **repo-owned** skill has its body here. A **layer A stub** is an address: one line pointing
+// into the vendored tree, present only so a harness that discovers skills by directory can
+// find the shared one. On `main` the plugin supplies the real thing, so the generator must
+// drop every stub — one that survived would be a second skill under the same name, and
+// nothing would say which of the two answers.
 function isLayerAStub(path) {
   return readFileSync(path, 'utf8').includes('.agents/vendor/harness');
 }
@@ -117,29 +116,9 @@ describe('main-branch transform manifest', () => {
     readFileSync(join(repositoryRoot, '.agents', 'transform', 'transform.json'), 'utf8'),
   );
 
-  it('names a canonical target for every pointer stub, and the stub says so too', () => {
-    for (const [stub, target] of Object.entries(manifest.pointers)) {
-      const stubPath = join(repositoryRoot, stub);
-      expect(existsSync(stubPath), `missing stub ${stub}`).toBe(true);
-      expect(readFileSync(stubPath, 'utf8'), `${stub} does not name ${target}`).toContain(target);
-      expect(existsSync(resolve(dirname(stubPath), target)), `${stub} → missing target`).toBe(true);
-    }
-  });
-
-  it('covers every repo-owned skill, so a new one cannot ship as a stub on main', () => {
-    const root = join(repositoryRoot, '.agents', 'skills');
-    const owned = readdirSync(root).filter(
-      (name) =>
-        existsSync(join(root, name, 'SKILL.md')) && !isLayerAStub(join(root, name, 'SKILL.md')),
-    );
-    const covered = Object.keys(manifest.pointers).map((stub) => stub.split('/')[2]);
-    expect(covered.sort()).toEqual(owned.sort());
-  });
-
-  // The other direction, and the one that fails silently. `vendor_sync sync` writes the
-  // vendored tree but not these stubs, so a skill added to layer A arrives here with
-  // nothing pointing at it — and a harness that discovers skills by directory simply does
-  // not have that command, with no error anywhere saying why.
+  // `vendor_sync sync` writes the vendored tree but not these stubs, so a skill added to
+  // layer A arrives here with nothing pointing at it — and a harness that discovers skills by
+  // directory simply does not have that command, with no error anywhere saying why.
   it('gives every layer A command and skill a discoverable stub', () => {
     const vendor = join(repositoryRoot, '.agents', 'vendor', 'harness');
     const shared = [
@@ -159,17 +138,22 @@ describe('main-branch transform manifest', () => {
     expect(missing, 'layer A with no stub under .agents/skills/').toEqual([]);
   });
 
-  it('gives layer A no pointer, so the plugin is the only copy on main', () => {
+  // On `main` the Claude plugin supplies layer A and `.codex` is gone, so every stub and
+  // every Codex `agents/openai.yaml` that `.claude/skills` would carry over has to be dropped.
+  it('drops every layer A stub and Codex adapter from .claude/skills on main', () => {
     const root = join(repositoryRoot, '.agents', 'skills');
-    const stubs = readdirSync(root).filter(
-      (name) =>
-        existsSync(join(root, name, 'SKILL.md')) && isLayerAStub(join(root, name, 'SKILL.md')),
-    );
+    const skills = readdirSync(root).filter((name) => existsSync(join(root, name, 'SKILL.md')));
+    const stubs = skills.filter((name) => isLayerAStub(join(root, name, 'SKILL.md')));
     expect(stubs.length, 'no layer A stubs found -- run vendor_sync.py sync').toBeGreaterThan(0);
 
-    const covered = new Set(Object.keys(manifest.pointers).map((stub) => stub.split('/')[2]));
-    const shadowing = stubs.filter((name) => covered.has(name));
-    expect(shadowing, 'layer A stubs with a pointer would shadow the plugin').toEqual([]);
+    const expected = [
+      ...stubs.map((name) => `.claude/skills/${name}`),
+      ...skills
+        .filter((name) => !stubs.includes(name) && existsSync(join(root, name, 'agents')))
+        .map((name) => `.claude/skills/${name}/agents`),
+    ];
+    const missing = expected.filter((path) => !manifest.drop.includes(path));
+    expect(missing, 'reaches main beside the plugin -- add to drop in transform.json').toEqual([]);
   });
 
   // A tracked symlink into `.agents/` dangles on `main`, which drops `.agents/`, unless the
@@ -195,43 +179,7 @@ describe('main-branch transform manifest', () => {
     }
   });
 });
-function frontmatter(source) {
-  const block = source.match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
-  return Object.fromEntries(
-    block.split(/\r?\n/).map((line) => {
-      const separator = line.indexOf(':');
-      return [line.slice(0, separator), line.slice(separator + 1).trim()];
-    }),
-  );
-}
-
 describe('harness-neutral compatibility adapters', () => {
-  const skillRoot = join(repositoryRoot, '.agents', 'skills');
-  const claudeSkillRoot = join(repositoryRoot, '.claude', 'skills');
-
-  it('maps every repo-owned skill to a Claude adapter with matching discovery metadata', () => {
-    const skillNames = readdirSync(skillRoot).filter(
-      (name) =>
-        existsSync(join(skillRoot, name, 'SKILL.md')) &&
-        !isLayerAStub(join(skillRoot, name, 'SKILL.md')),
-    );
-    expect(skillNames.length, 'no repo-owned skills left to check').toBeGreaterThan(0);
-
-    for (const name of skillNames) {
-      const canonicalPath = join(skillRoot, name, 'SKILL.md');
-      const adapterPath = join(claudeSkillRoot, name, 'SKILL.md');
-      expect(existsSync(adapterPath), `missing Claude adapter for ${name}`).toBe(true);
-
-      const canonical = readFileSync(canonicalPath, 'utf8');
-      const adapter = readFileSync(adapterPath, 'utf8');
-      expect(frontmatter(adapter)).toEqual(frontmatter(canonical));
-
-      const target = adapter.match(/Read and execute `([^`]+)`/)?.[1];
-      expect(target, `missing canonical pointer for ${name}`).toBeTruthy();
-      expect(resolve(dirname(adapterPath), target)).toBe(canonicalPath);
-    }
-  });
-
   it('points every Claude instruction file at its applicable AGENTS files', () => {
     const adapters = [
       ['CLAUDE.md', ['AGENTS.md']],

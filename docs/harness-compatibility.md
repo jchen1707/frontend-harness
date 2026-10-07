@@ -5,7 +5,7 @@ The repository contract is independent of Claude Code, Codex, or another agent h
 | Concern             | Canonical location                  | Harness adapter                                 |
 | ------------------- | ----------------------------------- | ----------------------------------------------- |
 | Instructions        | `AGENTS.md` and nested `AGENTS.md`  | `CLAUDE.md` pointer files                       |
-| Skills              | `.agents/skills/*/SKILL.md`         | `.claude/skills/*/SKILL.md` pointer skills      |
+| Skills              | `.agents/skills/*/SKILL.md`         | `.claude/skills` symlink                        |
 | Shared skills       | `harness`, one source               | Vendored, plus a stub under `.agents/skills/`   |
 | Workflow state      | `.agents/plans/`                    | A harness may expose its own UI or commands     |
 | Reviewer frames     | `harness`, one source               | Vendored under `.agents/vendor/harness/agents/` |
