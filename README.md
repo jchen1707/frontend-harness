@@ -222,9 +222,8 @@ not available. Both paths produce the same plans, tests, review evidence, and PR
 
 ## What runs without being asked
 
-One implementation, shared with `python-harness` and vendored here from
-[`harness`](https://github.com/jchen1707/harness). What each one acts on is declared under
-`hooks` in `harness.config.json`.
+The enabled [`harness`](https://github.com/jchen1707/harness) plugin supplies the shared
+implementation. What each hook acts on is declared under `hooks` in `harness.config.json`.
 
 | Hook                                 | Effect                                                                                    |
 | ------------------------------------ | ----------------------------------------------------------------------------------------- |
