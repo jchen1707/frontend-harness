@@ -48,7 +48,7 @@ Path-scoped, and they do not cascade: working in `src/core/` does not load
 
 ## Vocabulary this repo has settled
 
-- **"agent" means a dev-workflow subagent** (`.claude/agents/`), not an application-level AI
+- **"agent" means a dev-workflow subagent** (`.agents/agents/`), not an application-level AI
   agent. Say which you mean.
 - **"component" means a React component**; a **"feature"** means a slice under
   `src/features/`. Do not call a slice a module.
